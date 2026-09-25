@@ -57,6 +57,22 @@ public class TopicDAO {
         return topics;
     }
 
+    public Topic findById(int id) throws SQLException {
+        String sql = "SELECT id, subject_id, name, completed FROM topics WHERE id = ?";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, id);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return mapRow(resultSet);
+                }
+            }
+        }
+        return null;
+    }
+
     public List<Topic> findAll() throws SQLException {
         String sql = "SELECT id, subject_id, name, completed FROM topics ORDER BY subject_id, name";
         List<Topic> topics = new ArrayList<>();

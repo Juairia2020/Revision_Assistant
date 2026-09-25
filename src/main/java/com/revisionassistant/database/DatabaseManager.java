@@ -92,6 +92,60 @@ public final class DatabaseManager {
                 "    FOREIGN KEY(topic_id) REFERENCES topics(id)" +
                 ")";
 
+        // --- Milestone 3 tables ---------------------------------------
+
+        String createFlashcardsTable =
+                "CREATE TABLE IF NOT EXISTS flashcards (" +
+                "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    subject_id INTEGER NOT NULL," +
+                "    topic_id INTEGER," +
+                "    front TEXT NOT NULL," +
+                "    back TEXT NOT NULL," +
+                "    difficult INTEGER NOT NULL DEFAULT 0," +
+                "    revision_status TEXT NOT NULL DEFAULT 'NOT_STARTED'," +
+                "    FOREIGN KEY(subject_id) REFERENCES subjects(id)," +
+                "    FOREIGN KEY(topic_id) REFERENCES topics(id)" +
+                ")";
+
+        String createQuizQuestionsTable =
+                "CREATE TABLE IF NOT EXISTS quiz_questions (" +
+                "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    subject_id INTEGER NOT NULL," +
+                "    topic_id INTEGER," +
+                "    question_text TEXT NOT NULL," +
+                "    option_a TEXT NOT NULL," +
+                "    option_b TEXT NOT NULL," +
+                "    option_c TEXT NOT NULL," +
+                "    option_d TEXT NOT NULL," +
+                "    correct_option TEXT NOT NULL," +
+                "    FOREIGN KEY(subject_id) REFERENCES subjects(id)," +
+                "    FOREIGN KEY(topic_id) REFERENCES topics(id)" +
+                ")";
+
+        String createQuizAttemptsTable =
+                "CREATE TABLE IF NOT EXISTS quiz_attempts (" +
+                "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    subject_id INTEGER NOT NULL," +
+                "    topic_id INTEGER," +
+                "    attempt_date TEXT NOT NULL," +
+                "    total_questions INTEGER NOT NULL," +
+                "    correct_answers INTEGER NOT NULL," +
+                "    score_percent INTEGER NOT NULL," +
+                "    FOREIGN KEY(subject_id) REFERENCES subjects(id)," +
+                "    FOREIGN KEY(topic_id) REFERENCES topics(id)" +
+                ")";
+
+        String createQuizAttemptAnswersTable =
+                "CREATE TABLE IF NOT EXISTS quiz_attempt_answers (" +
+                "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    attempt_id INTEGER NOT NULL," +
+                "    question_id INTEGER NOT NULL," +
+                "    selected_option TEXT NOT NULL," +
+                "    correct INTEGER NOT NULL," +
+                "    FOREIGN KEY(attempt_id) REFERENCES quiz_attempts(id)," +
+                "    FOREIGN KEY(question_id) REFERENCES quiz_questions(id)" +
+                ")";
+
         try (Connection connection = getConnection();
              Statement statement = connection.createStatement()) {
             statement.execute(createSubjectsTable);
@@ -99,6 +153,10 @@ public final class DatabaseManager {
             statement.execute(createTasksTable);
             statement.execute(createExamsTable);
             statement.execute(createStudySessionsTable);
+            statement.execute(createFlashcardsTable);
+            statement.execute(createQuizQuestionsTable);
+            statement.execute(createQuizAttemptsTable);
+            statement.execute(createQuizAttemptAnswersTable);
         }
     }
 }

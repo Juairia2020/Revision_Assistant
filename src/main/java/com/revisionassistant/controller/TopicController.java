@@ -152,21 +152,6 @@ public class TopicController {
         }
     }
 
-    @FXML
-    private void handleMarkCompleted() {
-        Topic selected = topicsTable.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            showAlert(Alert.AlertType.WARNING, "No topic selected", "Select a topic to mark as completed.");
-            return;
-        }
-        try {
-            topicService.setCompleted(selected.getId(), true);
-            refreshTopics();
-        } catch (SQLException e) {
-            showAlert(Alert.AlertType.ERROR, "Database error", e.getMessage());
-        }
-    }
-
     private void refreshSubjects() {
         try {
             List<Subject> all = subjectService.getAllSubjects();

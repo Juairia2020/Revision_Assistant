@@ -1,6 +1,9 @@
 package com.revisionassistant.service;
 
 import com.revisionassistant.dao.ExamDAO;
+import com.revisionassistant.dao.FlashcardDAO;
+import com.revisionassistant.dao.QuizAttemptDAO;
+import com.revisionassistant.dao.QuizQuestionDAO;
 import com.revisionassistant.dao.StudySessionDAO;
 import com.revisionassistant.dao.SubjectDAO;
 import com.revisionassistant.dao.TaskDAO;
@@ -22,6 +25,9 @@ public class SubjectService {
     private final TaskDAO taskDAO;
     private final ExamDAO examDAO;
     private final StudySessionDAO studySessionDAO;
+    private final FlashcardDAO flashcardDAO;
+    private final QuizQuestionDAO quizQuestionDAO;
+    private final QuizAttemptDAO quizAttemptDAO;
 
     public SubjectService() {
         this.subjectDAO = new SubjectDAO();
@@ -29,6 +35,9 @@ public class SubjectService {
         this.taskDAO = new TaskDAO();
         this.examDAO = new ExamDAO();
         this.studySessionDAO = new StudySessionDAO();
+        this.flashcardDAO = new FlashcardDAO();
+        this.quizQuestionDAO = new QuizQuestionDAO();
+        this.quizAttemptDAO = new QuizAttemptDAO();
     }
 
     public Subject addSubject(String name, String color) throws SQLException {
@@ -62,10 +71,14 @@ public class SubjectService {
         int taskCount = taskDAO.countBySubjectId(subjectId);
         int examCount = examDAO.countBySubjectId(subjectId);
         int sessionCount = studySessionDAO.countBySubjectId(subjectId);
-        if (taskCount > 0 || examCount > 0 || sessionCount > 0) {
+        int flashcardCount = flashcardDAO.countBySubjectId(subjectId);
+        int quizQuestionCount = quizQuestionDAO.countBySubjectId(subjectId);
+        int quizAttemptCount = quizAttemptDAO.countBySubjectId(subjectId);
+        if (taskCount > 0 || examCount > 0 || sessionCount > 0
+                || flashcardCount > 0 || quizQuestionCount > 0 || quizAttemptCount > 0) {
             throw new IllegalStateException(
-                    "This subject still has tasks, exams or study sessions linked to it. "
-                            + "Remove those first before deleting the subject.");
+                    "This subject still has tasks, exams, study sessions, flashcards or quiz data "
+                            + "linked to it. Remove those first before deleting the subject.");
         }
         subjectDAO.delete(subjectId);
     }

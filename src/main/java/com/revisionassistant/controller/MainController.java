@@ -31,6 +31,10 @@ public class MainController {
     private Button examsButton;
     @FXML
     private Button studySessionsButton;
+    @FXML
+    private Button flashcardsButton;
+    @FXML
+    private Button quizButton;
 
     @FXML
     public void initialize() {
@@ -67,6 +71,16 @@ public class MainController {
         loadView("/com/revisionassistant/fxml/StudySessionView.fxml", studySessionsButton);
     }
 
+    @FXML
+    private void showFlashcards() {
+        loadView("/com/revisionassistant/fxml/FlashcardView.fxml", flashcardsButton);
+    }
+
+    @FXML
+    private void showQuiz() {
+        loadView("/com/revisionassistant/fxml/QuizView.fxml", quizButton);
+    }
+
     private void loadView(String fxmlPath, Button activeButton) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
@@ -81,7 +95,7 @@ public class MainController {
     /** Highlights the sidebar button for the view currently on screen. */
     private void markActive(Button activeButton) {
         for (Button button : new Button[]{dashboardButton, subjectsButton, topicsButton,
-                tasksButton, examsButton, studySessionsButton}) {
+                tasksButton, examsButton, studySessionsButton, flashcardsButton, quizButton}) {
             button.getStyleClass().remove("sidebar-button-active");
         }
         activeButton.getStyleClass().add("sidebar-button-active");

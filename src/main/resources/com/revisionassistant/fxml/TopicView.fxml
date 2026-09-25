@@ -34,7 +34,6 @@
                         <Button text="Add" onAction="#handleAddTopic" styleClass="primary-button"/>
                         <Button text="Update" onAction="#handleEditTopic" styleClass="secondary-button"/>
                         <Button text="Delete" onAction="#handleDeleteTopic" styleClass="danger-button"/>
-                        <Button text="Mark Completed" onAction="#handleMarkCompleted" styleClass="secondary-button"/>
                     </children>
                 </HBox>
             </children>

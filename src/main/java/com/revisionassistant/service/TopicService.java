@@ -1,5 +1,8 @@
 package com.revisionassistant.service;
 
+import com.revisionassistant.dao.FlashcardDAO;
+import com.revisionassistant.dao.QuizAttemptDAO;
+import com.revisionassistant.dao.QuizQuestionDAO;
 import com.revisionassistant.dao.StudySessionDAO;
 import com.revisionassistant.dao.SubjectDAO;
 import com.revisionassistant.dao.TaskDAO;
@@ -20,12 +23,18 @@ public class TopicService {
     private final SubjectDAO subjectDAO;
     private final TaskDAO taskDAO;
     private final StudySessionDAO studySessionDAO;
+    private final FlashcardDAO flashcardDAO;
+    private final QuizQuestionDAO quizQuestionDAO;
+    private final QuizAttemptDAO quizAttemptDAO;
 
     public TopicService() {
         this.topicDAO = new TopicDAO();
         this.subjectDAO = new SubjectDAO();
         this.taskDAO = new TaskDAO();
         this.studySessionDAO = new StudySessionDAO();
+        this.flashcardDAO = new FlashcardDAO();
+        this.quizQuestionDAO = new QuizQuestionDAO();
+        this.quizAttemptDAO = new QuizAttemptDAO();
     }
 
     public Topic addTopic(int subjectId, String name) throws SQLException {
@@ -58,9 +67,13 @@ public class TopicService {
     public void deleteTopic(int topicId) throws SQLException {
         int taskCount = taskDAO.countByTopicId(topicId);
         int sessionCount = studySessionDAO.countByTopicId(topicId);
-        if (taskCount > 0 || sessionCount > 0) {
+        int flashcardCount = flashcardDAO.countByTopicId(topicId);
+        int quizQuestionCount = quizQuestionDAO.countByTopicId(topicId);
+        int quizAttemptCount = quizAttemptDAO.countByTopicId(topicId);
+        if (taskCount > 0 || sessionCount > 0
+                || flashcardCount > 0 || quizQuestionCount > 0 || quizAttemptCount > 0) {
             throw new IllegalStateException(
-                    "This topic still has tasks or study sessions linked to it. "
+                    "This topic still has tasks, study sessions, flashcards or quiz data linked to it. "
                             + "Remove those first before deleting the topic.");
         }
         topicDAO.delete(topicId);

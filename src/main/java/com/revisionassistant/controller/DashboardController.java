@@ -4,6 +4,8 @@ import com.revisionassistant.model.Exam;
 import com.revisionassistant.model.Task;
 import com.revisionassistant.service.DashboardService;
 import com.revisionassistant.service.DashboardService.SubjectProgress;
+import com.revisionassistant.service.FlashcardService.DifficultCardSummary;
+import com.revisionassistant.service.QuizService.MissedQuestionSummary;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -30,6 +32,14 @@ public class DashboardController {
     private Label studyTodayValue;
     @FXML
     private Label studyWeekValue;
+    @FXML
+    private Label cardsToReviseValue;
+    @FXML
+    private Label difficultCardsValue;
+    @FXML
+    private Label quizAttemptsValue;
+    @FXML
+    private Label averageScoreValue;
 
     @FXML
     private VBox todaysTasksBox;
@@ -37,8 +47,14 @@ public class DashboardController {
     private VBox upcomingExamsBox;
     @FXML
     private VBox subjectProgressBox;
+    @FXML
+    private VBox missedQuestionsBox;
+    @FXML
+    private VBox difficultCardsBox;
 
     private final DashboardService dashboardService = new DashboardService();
+
+    private static final int MAX_ROWS_PER_SECTION = 5;
 
     @FXML
     public void initialize() {
@@ -52,10 +68,17 @@ public class DashboardController {
             completedTasksValue.setText(String.valueOf(dashboardService.getCompletedTaskCount()));
             studyTodayValue.setText(formatMinutes(dashboardService.getMinutesStudiedToday()));
             studyWeekValue.setText(formatMinutes(dashboardService.getMinutesStudiedThisWeek()));
+            cardsToReviseValue.setText(String.valueOf(dashboardService.getCardsToReviseCount()));
+            difficultCardsValue.setText(String.valueOf(dashboardService.getDifficultFlashcardCount()));
+            quizAttemptsValue.setText(String.valueOf(dashboardService.getQuizAttemptCount()));
+            averageScoreValue.setText(dashboardService.getQuizAttemptCount() == 0
+                    ? "—" : dashboardService.getAverageQuizScore() + "%");
 
             renderTasks(dashboardService.getTodaysTasks(), dashboardService.getOverdueTasks());
             renderExams(dashboardService.getUpcomingExams(5));
             renderSubjectProgress(dashboardService.getSubjectProgress());
+            renderMissedQuestions(dashboardService.getFrequentlyMissedQuestions(MAX_ROWS_PER_SECTION));
+            renderDifficultCards(dashboardService.getMostDifficultFlashcards(MAX_ROWS_PER_SECTION));
         } catch (SQLException e) {
             Label error = new Label("Could not load dashboard data: " + e.getMessage());
             todaysTasksBox.getChildren().setAll(error);
@@ -167,6 +190,71 @@ public class DashboardController {
         HBox spacer = new HBox();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
         return spacer;
+    }
+
+    private void renderMissedQuestions(List<MissedQuestionSummary> summaries) {
+        missedQuestionsBox.getChildren().clear();
+
+        if (summaries.isEmpty()) {
+            missedQuestionsBox.getChildren().add(
+                    emptyStateLabel("No quiz results yet. Take a quiz to see frequently missed questions here."));
+            return;
+        }
+
+        for (MissedQuestionSummary summary : summaries) {
+            missedQuestionsBox.getChildren().add(buildMissedQuestionRow(summary));
+        }
+    }
+
+    private HBox buildMissedQuestionRow(MissedQuestionSummary summary) {
+        Label title = new Label(summary.getQuestionText());
+        title.getStyleClass().add("row-title");
+        title.setWrapText(true);
+
+        String topicPart = summary.getTopicName() == null ? "" : " · " + summary.getTopicName();
+        Label meta = new Label(summary.getSubjectName() + topicPart + " · missed "
+                + summary.getMissCount() + (summary.getMissCount() == 1 ? " time" : " times"));
+        meta.getStyleClass().add("row-meta");
+
+        VBox textBox = new VBox(2, title, meta);
+        HBox.setHgrow(textBox, javafx.scene.layout.Priority.ALWAYS);
+
+        HBox row = new HBox(10, textBox);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.getStyleClass().add("dashboard-row");
+        return row;
+    }
+
+    private void renderDifficultCards(List<DifficultCardSummary> summaries) {
+        difficultCardsBox.getChildren().clear();
+
+        if (summaries.isEmpty()) {
+            difficultCardsBox.getChildren().add(
+                    emptyStateLabel("No flashcards marked difficult yet."));
+            return;
+        }
+
+        for (DifficultCardSummary summary : summaries) {
+            difficultCardsBox.getChildren().add(buildDifficultCardRow(summary));
+        }
+    }
+
+    private HBox buildDifficultCardRow(DifficultCardSummary summary) {
+        Label title = new Label(summary.getFront());
+        title.getStyleClass().add("row-title");
+        title.setWrapText(true);
+
+        String topicPart = summary.getTopicName() == null ? "" : " · " + summary.getTopicName();
+        Label meta = new Label(summary.getSubjectName() + topicPart);
+        meta.getStyleClass().add("row-meta");
+
+        VBox textBox = new VBox(2, title, meta);
+        HBox.setHgrow(textBox, javafx.scene.layout.Priority.ALWAYS);
+
+        HBox row = new HBox(10, textBox);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.getStyleClass().add("dashboard-row");
+        return row;
     }
 
     private Label emptyStateLabel(String text) {

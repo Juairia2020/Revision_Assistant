@@ -29,6 +29,11 @@
                         styleClass="sidebar-button" onAction="#showExams"/>
                 <Button fx:id="studySessionsButton" text="Study Sessions" maxWidth="Infinity"
                         styleClass="sidebar-button" onAction="#showStudySessions"/>
+                <Separator/>
+                <Button fx:id="flashcardsButton" text="Flashcards" maxWidth="Infinity"
+                        styleClass="sidebar-button" onAction="#showFlashcards"/>
+                <Button fx:id="quizButton" text="Quiz" maxWidth="Infinity"
+                        styleClass="sidebar-button" onAction="#showQuiz"/>
             </children>
         </VBox>
     </left>
