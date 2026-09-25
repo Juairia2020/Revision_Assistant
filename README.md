@@ -8,9 +8,7 @@ data-driven Dashboard.
 
 - JDK 26
 - IntelliJ IDEA (Community or Ultimate)
-- Internet access the first time you open the project, so Maven can download
-  the JavaFX and SQLite JDBC dependencies
-
+  
 ## Run it
 
 1. Open the project folder in IntelliJ IDEA (`File > Open`, pick this folder).
@@ -19,7 +17,3 @@ data-driven Dashboard.
 4. Open the Maven tool window (right-hand sidebar) and run
    `revision-assistant > Plugins > javafx > javafx:run`.
 
-`revision_assistant.db` is created automatically the first time the app runs,
-in the project's working directory.
-
-See the full write-up (including a testing checklist) for more detail.
