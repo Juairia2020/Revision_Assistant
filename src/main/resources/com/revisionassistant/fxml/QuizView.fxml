@@ -25,6 +25,7 @@
             </padding>
             <children>
                 <Label text="Quiz" styleClass="view-title"/>
+                <Label text="Generate structured JSON from your study material using any AI tool, save it as a .json file, and import it here." wrapText="true" styleClass="row-meta"/>
             </children>
         </VBox>
     </top>
@@ -63,6 +64,8 @@
                                                 <Button text="Add" onAction="#handleAddQuestion" styleClass="primary-button"/>
                                                 <Button text="Update" onAction="#handleEditQuestion" styleClass="secondary-button"/>
                                                 <Button text="Delete" onAction="#handleDeleteQuestion" styleClass="danger-button"/>
+                                                <Button text="Import JSON" onAction="#handleImportJson" styleClass="secondary-button"/>
+                                                <Button text="Copy Prompt" onAction="#handleCopyJsonPrompt" styleClass="link-button"/>
                                             </children>
                                         </HBox>
 

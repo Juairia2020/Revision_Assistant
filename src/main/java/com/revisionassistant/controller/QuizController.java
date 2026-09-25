@@ -1,10 +1,14 @@
 package com.revisionassistant.controller;
 
+import com.revisionassistant.dto.ImportedQuizQuestionDTO;
+import com.revisionassistant.dto.QuizImportDTO;
 import com.revisionassistant.model.QuizAttempt;
 import com.revisionassistant.model.QuizOption;
 import com.revisionassistant.model.QuizQuestion;
 import com.revisionassistant.model.Subject;
 import com.revisionassistant.model.Topic;
+import com.revisionassistant.service.JsonImportException;
+import com.revisionassistant.service.JsonImportService;
 import com.revisionassistant.service.QuizService;
 import com.revisionassistant.service.SubjectService;
 import com.revisionassistant.service.TopicService;
@@ -12,6 +16,9 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -24,7 +31,12 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
 import java.sql.SQLException;
@@ -101,6 +113,7 @@ public class QuizController {
     private final SubjectService subjectService = new SubjectService();
     private final TopicService topicService = new TopicService();
     private final QuizService quizService = new QuizService();
+    private final JsonImportService jsonImportService = new JsonImportService();
 
     private final ObservableList<Subject> subjects = FXCollections.observableArrayList();
     private final ObservableList<QuizQuestion> questions = FXCollections.observableArrayList();
@@ -219,6 +232,114 @@ public class QuizController {
             refreshQuestions();
         } catch (IllegalArgumentException | SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Could not add question", e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleImportJson() {
+        Subject subject = subjectComboBox.getValue();
+        if (subject == null) {
+            showAlert(Alert.AlertType.WARNING, "No subject selected",
+                    "Choose a subject before importing JSON.");
+            return;
+        }
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Import quiz questions from JSON");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON files", "*.json"));
+        java.io.File file = chooser.showOpenDialog(questionsTable.getScene().getWindow());
+        if (file == null) {
+            return;
+        }
+
+        QuizImportDTO document;
+        try {
+            document = jsonImportService.readQuiz(file);
+        } catch (JsonImportException e) {
+            showAlert(Alert.AlertType.ERROR, "Invalid quiz JSON", e.getMessage());
+            return;
+        }
+
+        Topic topic;
+        try {
+            topic = resolveImportedTopic(subject, document.getTopic());
+        } catch (IllegalArgumentException | SQLException e) {
+            showAlert(Alert.AlertType.ERROR, "Invalid topic", e.getMessage());
+            return;
+        }
+
+        List<ImportedQuizQuestionDTO> accepted =
+                showImportedQuestionsDialog(document.getQuestions());
+        if (accepted == null || accepted.isEmpty()) {
+            return;
+        }
+
+        int saved = 0;
+        for (ImportedQuizQuestionDTO question : accepted) {
+            try {
+                quizService.addQuestion(subject.getId(), topic.getId(),
+                        question.getQuestion(), question.getOptionA(), question.getOptionB(),
+                        question.getOptionC(), question.getOptionD(),
+                        QuizOption.fromString(question.getCorrectOptionLetter()));
+                saved++;
+            } catch (IllegalArgumentException | SQLException e) {
+                showAlert(Alert.AlertType.ERROR, "Could not save imported question", e.getMessage());
+                break;
+            }
+        }
+        refreshQuestions();
+        if (saved > 0) {
+            showAlert(Alert.AlertType.INFORMATION, "Import complete",
+                    saved + " question(s) were added.");
+        }
+    }
+
+    @FXML
+    private void handleCopyJsonPrompt() {
+        ClipboardContent content = new ClipboardContent();
+        content.putString(JsonImportService.quizPrompt());
+        Clipboard.getSystemClipboard().setContent(content);
+        showAlert(Alert.AlertType.INFORMATION, "Prompt copied",
+                "The quiz JSON prompt was copied to the clipboard.");
+    }
+
+    private Topic resolveImportedTopic(Subject subject, String topicName) throws SQLException {
+        String imported = topicName == null ? "" : topicName.trim();
+        Topic selected = topicComboBox.getValue();
+        if (selected != null && !selected.getName().equalsIgnoreCase(imported)) {
+            throw new IllegalArgumentException(
+                    "The JSON topic \"" + imported + "\" does not match the selected topic \""
+                            + selected.getName() + "\".");
+        }
+        for (Topic topic : topicService.getTopicsForSubject(subject.getId())) {
+            if (topic.getName().equalsIgnoreCase(imported)) {
+                return topic;
+            }
+        }
+        throw new IllegalArgumentException(
+                "Topic \"" + imported + "\" does not exist for the selected subject.");
+    }
+
+    private List<ImportedQuizQuestionDTO> showImportedQuestionsDialog(
+            List<ImportedQuizQuestionDTO> imported) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/com/revisionassistant/fxml/ImportedQuestionsDialog.fxml"));
+            Parent root = loader.load();
+            ImportedQuestionsDialogController controller = loader.getController();
+            controller.setQuestions(imported);
+
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle("Preview imported quiz questions");
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            dialogStage.setScene(new Scene(root));
+            dialogStage.showAndWait();
+
+            return controller.isConfirmed() ? controller.getSelectedQuestions() : null;
+        } catch (Exception e) {
+            showAlert(Alert.AlertType.ERROR, "Could not open preview",
+                    "Could not show the imported questions: " + e.getMessage());
+            return null;
         }
     }
 
