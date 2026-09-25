@@ -1,6 +1,8 @@
 package com.revisionassistant.service;
 
+import com.revisionassistant.dao.StudySessionDAO;
 import com.revisionassistant.dao.SubjectDAO;
+import com.revisionassistant.dao.TaskDAO;
 import com.revisionassistant.dao.TopicDAO;
 import com.revisionassistant.model.Topic;
 
@@ -16,10 +18,14 @@ public class TopicService {
 
     private final TopicDAO topicDAO;
     private final SubjectDAO subjectDAO;
+    private final TaskDAO taskDAO;
+    private final StudySessionDAO studySessionDAO;
 
     public TopicService() {
         this.topicDAO = new TopicDAO();
         this.subjectDAO = new SubjectDAO();
+        this.taskDAO = new TaskDAO();
+        this.studySessionDAO = new StudySessionDAO();
     }
 
     public Topic addTopic(int subjectId, String name) throws SQLException {
@@ -43,7 +49,20 @@ public class TopicService {
         topicDAO.updateCompleted(topicId, completed);
     }
 
+    /**
+     * Deletes a topic only if no task or study session still points
+     * to it. Tasks and sessions can also be logged against a subject
+     * with no specific topic, so this does not block deleting the
+     * subject itself.
+     */
     public void deleteTopic(int topicId) throws SQLException {
+        int taskCount = taskDAO.countByTopicId(topicId);
+        int sessionCount = studySessionDAO.countByTopicId(topicId);
+        if (taskCount > 0 || sessionCount > 0) {
+            throw new IllegalStateException(
+                    "This topic still has tasks or study sessions linked to it. "
+                            + "Remove those first before deleting the topic.");
+        }
         topicDAO.delete(topicId);
     }
 

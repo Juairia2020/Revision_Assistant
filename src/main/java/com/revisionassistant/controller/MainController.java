@@ -1,32 +1,36 @@
 package com.revisionassistant.controller;
 
-import com.revisionassistant.model.Subject;
-import com.revisionassistant.model.Topic;
-import com.revisionassistant.service.SubjectService;
-import com.revisionassistant.service.TopicService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Label;
+import javafx.scene.control.Button;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 
 import java.io.IOException;
-import java.sql.SQLException;
-import java.util.List;
 
 /**
  * Controller for MainView.fxml. Only handles navigation between the
- * Dashboard, Subjects and Topics views - it has no SQL and no business
- * rules of its own.
+ * Dashboard, Subjects, Topics, Tasks, Exams and Study Sessions views -
+ * it has no SQL and no business rules of its own.
  */
 public class MainController {
 
     @FXML
     private StackPane contentArea;
+
+    @FXML
+    private Button dashboardButton;
+    @FXML
+    private Button subjectsButton;
+    @FXML
+    private Button topicsButton;
+    @FXML
+    private Button tasksButton;
+    @FXML
+    private Button examsButton;
+    @FXML
+    private Button studySessionsButton;
 
     @FXML
     public void initialize() {
@@ -35,71 +39,52 @@ public class MainController {
 
     @FXML
     private void showDashboard() {
-        contentArea.getChildren().setAll(buildDashboard());
+        loadView("/com/revisionassistant/fxml/DashboardView.fxml", dashboardButton);
     }
 
     @FXML
     private void showSubjects() {
-        loadView("/com/revisionassistant/fxml/SubjectView.fxml");
+        loadView("/com/revisionassistant/fxml/SubjectView.fxml", subjectsButton);
     }
 
     @FXML
     private void showTopics() {
-        loadView("/com/revisionassistant/fxml/TopicView.fxml");
+        loadView("/com/revisionassistant/fxml/TopicView.fxml", topicsButton);
     }
 
-    private void loadView(String fxmlPath) {
+    @FXML
+    private void showTasks() {
+        loadView("/com/revisionassistant/fxml/TaskView.fxml", tasksButton);
+    }
+
+    @FXML
+    private void showExams() {
+        loadView("/com/revisionassistant/fxml/ExamView.fxml", examsButton);
+    }
+
+    @FXML
+    private void showStudySessions() {
+        loadView("/com/revisionassistant/fxml/StudySessionView.fxml", studySessionsButton);
+    }
+
+    private void loadView(String fxmlPath, Button activeButton) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent view = loader.load();
             contentArea.getChildren().setAll(view);
+            markActive(activeButton);
         } catch (IOException e) {
             showError("Unable to load view: " + e.getMessage());
         }
     }
 
-    /**
-     * Builds a small summary panel showing subject/topic counts. Built
-     * in code rather than its own FXML file since it is just a handful
-     * of read-only labels.
-     */
-    private VBox buildDashboard() {
-        VBox box = new VBox(10);
-        box.setPadding(new Insets(24));
-        box.setAlignment(Pos.TOP_LEFT);
-        box.getStyleClass().add("dashboard");
-
-        Label title = new Label("Dashboard");
-        title.getStyleClass().add("dashboard-title");
-        box.getChildren().add(title);
-
-        try {
-            SubjectService subjectService = new SubjectService();
-            TopicService topicService = new TopicService();
-
-            List<Subject> subjects = subjectService.getAllSubjects();
-            int totalTopics = 0;
-            int completedTopics = 0;
-
-            for (Subject subject : subjects) {
-                List<Topic> topics = topicService.getTopicsForSubject(subject.getId());
-                totalTopics += topics.size();
-                for (Topic topic : topics) {
-                    if (topic.isCompleted()) {
-                        completedTopics++;
-                    }
-                }
-            }
-
-            box.getChildren().add(new Label("Subjects: " + subjects.size()));
-            box.getChildren().add(new Label("Topics: " + totalTopics));
-            box.getChildren().add(new Label("Completed: " + completedTopics + " / " + totalTopics));
-            box.getChildren().add(new Label("Use the sidebar to manage subjects and topics."));
-        } catch (SQLException e) {
-            box.getChildren().add(new Label("Could not load dashboard data: " + e.getMessage()));
+    /** Highlights the sidebar button for the view currently on screen. */
+    private void markActive(Button activeButton) {
+        for (Button button : new Button[]{dashboardButton, subjectsButton, topicsButton,
+                tasksButton, examsButton, studySessionsButton}) {
+            button.getStyleClass().remove("sidebar-button-active");
         }
-
-        return box;
+        activeButton.getStyleClass().add("sidebar-button-active");
     }
 
     private void showError(String message) {

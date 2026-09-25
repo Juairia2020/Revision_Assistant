@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane fitToWidth="true" styleClass="dashboard-scroll"
+            xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.revisionassistant.controller.DashboardController">
+    <content>
+        <VBox spacing="20" styleClass="dashboard">
+            <padding>
+                <Insets top="24" right="24" bottom="24" left="24"/>
+            </padding>
+            <children>
+                <Label text="Dashboard" styleClass="view-title"/>
+
+                <!-- Summary cards -->
+                <HBox spacing="16" styleClass="stat-card-row">
+                    <children>
+                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                            <children>
+                                <Label fx:id="pendingTasksValue" text="0" styleClass="stat-value"/>
+                                <Label text="Pending tasks" styleClass="stat-label"/>
+                            </children>
+                        </VBox>
+                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                            <children>
+                                <Label fx:id="completedTasksValue" text="0" styleClass="stat-value"/>
+                                <Label text="Completed tasks" styleClass="stat-label"/>
+                            </children>
+                        </VBox>
+                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                            <children>
+                                <Label fx:id="studyTodayValue" text="0 min" styleClass="stat-value"/>
+                                <Label text="Studied today" styleClass="stat-label"/>
+                            </children>
+                        </VBox>
+                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                            <children>
+                                <Label fx:id="studyWeekValue" text="0 min" styleClass="stat-value"/>
+                                <Label text="Studied this week" styleClass="stat-label"/>
+                            </children>
+                        </VBox>
+                    </children>
+                </HBox>
+
+                <!-- Tasks + Exams side by side -->
+                <GridPane hgap="16" vgap="16">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="50"/>
+                        <ColumnConstraints percentWidth="50"/>
+                    </columnConstraints>
+                    <children>
+                        <VBox spacing="10" styleClass="dashboard-section" GridPane.columnIndex="0">
+                            <children>
+                                <Label text="Today's Tasks" styleClass="section-title"/>
+                                <VBox fx:id="todaysTasksBox" spacing="8"/>
+                            </children>
+                        </VBox>
+                        <VBox spacing="10" styleClass="dashboard-section" GridPane.columnIndex="1">
+                            <children>
+                                <Label text="Upcoming Exams" styleClass="section-title"/>
+                                <VBox fx:id="upcomingExamsBox" spacing="8"/>
+                            </children>
+                        </VBox>
+                    </children>
+                </GridPane>
+
+                <!-- Subject progress -->
+                <VBox spacing="10" styleClass="dashboard-section">
+                    <children>
+                        <Label text="Subject Progress" styleClass="section-title"/>
+                        <VBox fx:id="subjectProgressBox" spacing="12"/>
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+    </content>
+</ScrollPane>

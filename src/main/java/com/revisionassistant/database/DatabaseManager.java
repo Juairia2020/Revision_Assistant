@@ -54,10 +54,51 @@ public final class DatabaseManager {
                 "    FOREIGN KEY(subject_id) REFERENCES subjects(id)" +
                 ")";
 
+        // --- Milestone 2 tables ---------------------------------------
+
+        String createTasksTable =
+                "CREATE TABLE IF NOT EXISTS tasks (" +
+                "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    subject_id INTEGER NOT NULL," +
+                "    topic_id INTEGER," +
+                "    title TEXT NOT NULL," +
+                "    estimated_minutes INTEGER NOT NULL DEFAULT 0," +
+                "    priority TEXT NOT NULL DEFAULT 'MEDIUM'," +
+                "    deadline TEXT," +
+                "    completed INTEGER NOT NULL DEFAULT 0," +
+                "    FOREIGN KEY(subject_id) REFERENCES subjects(id)," +
+                "    FOREIGN KEY(topic_id) REFERENCES topics(id)" +
+                ")";
+
+        String createExamsTable =
+                "CREATE TABLE IF NOT EXISTS exams (" +
+                "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    subject_id INTEGER NOT NULL," +
+                "    title TEXT NOT NULL," +
+                "    exam_date TEXT NOT NULL," +
+                "    progress INTEGER NOT NULL DEFAULT 0," +
+                "    FOREIGN KEY(subject_id) REFERENCES subjects(id)" +
+                ")";
+
+        String createStudySessionsTable =
+                "CREATE TABLE IF NOT EXISTS study_sessions (" +
+                "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    subject_id INTEGER NOT NULL," +
+                "    topic_id INTEGER," +
+                "    session_date TEXT NOT NULL," +
+                "    duration_minutes INTEGER NOT NULL," +
+                "    notes TEXT," +
+                "    FOREIGN KEY(subject_id) REFERENCES subjects(id)," +
+                "    FOREIGN KEY(topic_id) REFERENCES topics(id)" +
+                ")";
+
         try (Connection connection = getConnection();
              Statement statement = connection.createStatement()) {
             statement.execute(createSubjectsTable);
             statement.execute(createTopicsTable);
+            statement.execute(createTasksTable);
+            statement.execute(createExamsTable);
+            statement.execute(createStudySessionsTable);
         }
     }
 }

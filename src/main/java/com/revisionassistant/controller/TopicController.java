@@ -145,6 +145,8 @@ public class TopicController {
             topicNameField.clear();
             completedCheckBox.setSelected(false);
             refreshTopics();
+        } catch (IllegalStateException e) {
+            showAlert(Alert.AlertType.WARNING, "Cannot delete topic", e.getMessage());
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Database error", e.getMessage());
         }

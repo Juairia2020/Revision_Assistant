@@ -2,6 +2,7 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
@@ -9,17 +10,25 @@
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.revisionassistant.controller.MainController">
     <left>
-        <VBox fx:id="sidebar" spacing="10" styleClass="sidebar" BorderPane.alignment="CENTER">
+        <VBox fx:id="sidebar" spacing="6" styleClass="sidebar" BorderPane.alignment="CENTER">
             <padding>
-                <Insets top="20" right="16" bottom="20" left="16"/>
+                <Insets top="20" right="14" bottom="20" left="14"/>
             </padding>
             <children>
                 <Button fx:id="dashboardButton" text="Dashboard" maxWidth="Infinity"
                         styleClass="sidebar-button" onAction="#showDashboard"/>
+                <Separator/>
                 <Button fx:id="subjectsButton" text="Subjects" maxWidth="Infinity"
                         styleClass="sidebar-button" onAction="#showSubjects"/>
                 <Button fx:id="topicsButton" text="Topics" maxWidth="Infinity"
                         styleClass="sidebar-button" onAction="#showTopics"/>
+                <Separator/>
+                <Button fx:id="tasksButton" text="Tasks" maxWidth="Infinity"
+                        styleClass="sidebar-button" onAction="#showTasks"/>
+                <Button fx:id="examsButton" text="Exams" maxWidth="Infinity"
+                        styleClass="sidebar-button" onAction="#showExams"/>
+                <Button fx:id="studySessionsButton" text="Study Sessions" maxWidth="Infinity"
+                        styleClass="sidebar-button" onAction="#showStudySessions"/>
             </children>
         </VBox>
     </left>

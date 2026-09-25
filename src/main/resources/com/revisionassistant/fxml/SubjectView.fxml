@@ -25,7 +25,7 @@
                         <TextField fx:id="nameField" promptText="Subject name" prefWidth="220"/>
                         <ColorPicker fx:id="colorPicker"/>
                         <Button text="Add" onAction="#handleAdd" styleClass="primary-button"/>
-                        <Button text="Update" onAction="#handleEdit"/>
+                        <Button text="Update" onAction="#handleEdit" styleClass="secondary-button"/>
                         <Button text="Delete" onAction="#handleDelete" styleClass="danger-button"/>
                     </children>
                 </HBox>
