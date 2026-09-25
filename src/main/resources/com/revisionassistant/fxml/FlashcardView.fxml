@@ -24,6 +24,7 @@
             </padding>
             <children>
                 <Label text="Flashcards" styleClass="view-title"/>
+                <Label text="Generate structured JSON from your study material using any AI tool, save it as a .json file, and import it here." wrapText="true" styleClass="row-meta"/>
 
                 <HBox spacing="10" alignment="CENTER_LEFT">
                     <children>
@@ -44,6 +45,8 @@
                         <Button text="Add" onAction="#handleAddFlashcard" styleClass="primary-button"/>
                         <Button text="Update" onAction="#handleEditFlashcard" styleClass="secondary-button"/>
                         <Button text="Delete" onAction="#handleDeleteFlashcard" styleClass="danger-button"/>
+                        <Button text="Import JSON" onAction="#handleImportJson" styleClass="secondary-button"/>
+                        <Button text="Copy Prompt" onAction="#handleCopyJsonPrompt" styleClass="link-button"/>
                     </children>
                 </HBox>
 

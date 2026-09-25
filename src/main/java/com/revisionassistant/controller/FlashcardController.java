@@ -1,9 +1,13 @@
 package com.revisionassistant.controller;
 
+import com.revisionassistant.dto.FlashcardImportDTO;
+import com.revisionassistant.dto.ImportedFlashcardDTO;
 import com.revisionassistant.model.Flashcard;
 import com.revisionassistant.model.RevisionStatus;
 import com.revisionassistant.model.Subject;
 import com.revisionassistant.model.Topic;
+import com.revisionassistant.service.JsonImportException;
+import com.revisionassistant.service.JsonImportService;
 import com.revisionassistant.service.FlashcardService;
 import com.revisionassistant.service.SubjectService;
 import com.revisionassistant.service.TopicService;
@@ -12,6 +16,9 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
@@ -21,6 +28,11 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.stage.FileChooser;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.util.StringConverter;
 
 import java.sql.SQLException;
@@ -79,6 +91,7 @@ public class FlashcardController {
     private final SubjectService subjectService = new SubjectService();
     private final TopicService topicService = new TopicService();
     private final FlashcardService flashcardService = new FlashcardService();
+    private final JsonImportService jsonImportService = new JsonImportService();
 
     private final ObservableList<Subject> subjects = FXCollections.observableArrayList();
     private final ObservableList<Flashcard> flashcards = FXCollections.observableArrayList();
@@ -225,6 +238,110 @@ public class FlashcardController {
             refreshFlashcards();
         } catch (IllegalArgumentException | SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Could not add flashcard", e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleImportJson() {
+        Subject subject = subjectComboBox.getValue();
+        if (subject == null) {
+            showAlert(Alert.AlertType.WARNING, "No subject selected",
+                    "Choose a subject before importing JSON.");
+            return;
+        }
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Import flashcards from JSON");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON files", "*.json"));
+        java.io.File file = chooser.showOpenDialog(flashcardsTable.getScene().getWindow());
+        if (file == null) {
+            return;
+        }
+
+        FlashcardImportDTO document;
+        try {
+            document = jsonImportService.readFlashcards(file);
+        } catch (JsonImportException e) {
+            showAlert(Alert.AlertType.ERROR, "Invalid flashcard JSON", e.getMessage());
+            return;
+        }
+
+        Topic topic;
+        try {
+            topic = resolveImportedTopic(subject, document.getTopic());
+        } catch (IllegalArgumentException | SQLException e) {
+            showAlert(Alert.AlertType.ERROR, "Invalid topic", e.getMessage());
+            return;
+        }
+
+        List<ImportedFlashcardDTO> accepted = showImportedFlashcardsDialog(document.getFlashcards());
+        if (accepted == null || accepted.isEmpty()) {
+            return;
+        }
+
+        int saved = 0;
+        for (ImportedFlashcardDTO card : accepted) {
+            try {
+                flashcardService.addFlashcard(subject.getId(), topic.getId(),
+                        card.getQuestion(), card.getAnswer());
+                saved++;
+            } catch (IllegalArgumentException | SQLException e) {
+                showAlert(Alert.AlertType.ERROR, "Could not save imported flashcard", e.getMessage());
+                break;
+            }
+        }
+        refreshFlashcards();
+        if (saved > 0) {
+            showAlert(Alert.AlertType.INFORMATION, "Import complete",
+                    saved + " flashcard(s) were added.");
+        }
+    }
+
+    @FXML
+    private void handleCopyJsonPrompt() {
+        ClipboardContent content = new ClipboardContent();
+        content.putString(JsonImportService.flashcardPrompt());
+        Clipboard.getSystemClipboard().setContent(content);
+        showAlert(Alert.AlertType.INFORMATION, "Prompt copied",
+                "The flashcard JSON prompt was copied to the clipboard.");
+    }
+
+    private Topic resolveImportedTopic(Subject subject, String topicName) throws SQLException {
+        String imported = topicName == null ? "" : topicName.trim();
+        Topic selected = topicComboBox.getValue();
+        if (selected != null && !selected.getName().equalsIgnoreCase(imported)) {
+            throw new IllegalArgumentException(
+                    "The JSON topic \"" + imported + "\" does not match the selected topic \""
+                            + selected.getName() + "\".");
+        }
+        for (Topic topic : topicService.getTopicsForSubject(subject.getId())) {
+            if (topic.getName().equalsIgnoreCase(imported)) {
+                return topic;
+            }
+        }
+        throw new IllegalArgumentException(
+                "Topic \"" + imported + "\" does not exist for the selected subject.");
+    }
+
+    private List<ImportedFlashcardDTO> showImportedFlashcardsDialog(List<ImportedFlashcardDTO> imported) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/com/revisionassistant/fxml/ImportedFlashcardsDialog.fxml"));
+            Parent root = loader.load();
+            ImportedFlashcardsDialogController controller = loader.getController();
+            controller.setCards(imported);
+
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle("Preview imported flashcards");
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            dialogStage.setScene(new Scene(root));
+            dialogStage.showAndWait();
+
+            return controller.isConfirmed() ? controller.getSelectedCards() : null;
+        } catch (Exception e) {
+            showAlert(Alert.AlertType.ERROR, "Could not open preview",
+                    "Could not show the imported flashcards: " + e.getMessage());
+            return null;
         }
     }
 

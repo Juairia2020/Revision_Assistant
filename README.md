@@ -1,27 +1,70 @@
-# Revision Assistant
+# Revision Assistant — Milestone 4B-1
 
-A JavaFX + SQLite desktop app for planning revision. Milestone 1 covered
-Subjects and Topics; Milestone 2 added Tasks, Exams, Study Sessions,
-Flashcards, Quizzes and a data-driven Dashboard. Milestone 3 adds a topic
-prerequisite/dependency graph and an algorithm-driven Study Planner, under
-the new "Study Tools" screen.
+Milestone 4B-1 makes JSON-file import the primary AI-content workflow. The application does not require an AI-provider API key, environment variable, model name, or `config.properties` file.
 
-## Requirements
+## Workflow
 
+Study material → any external AI tool → structured JSON → `.json` file → Revision Assistant → Import JSON → Jackson DTO → validation → preview → user confirmation → existing Service → DAO → SQLite.
+
+The existing manual Flashcard and Quiz workflows remain available.
+
+## Running
+
+Requirements:
 - JDK 26
-- IntelliJ IDEA (Community or Ultimate)
-- Internet access the first time you open the project, so Maven can download
-  the JavaFX and SQLite JDBC dependencies
+- Maven
+- JavaFX and SQLite dependencies are provided by Maven.
 
-## Run it
+From the project root:
 
-1. Open the project folder in IntelliJ IDEA (`File > Open`, pick this folder).
-2. Wait for Maven to finish importing (bottom-right progress bar).
-3. Set the Project SDK to JDK 26: `File > Project Structure > Project > SDK`.
-4. Open the Maven tool window (right-hand sidebar) and run
-   `revision-assistant > Plugins > javafx > javafx:run`.
+```text
+mvn clean javafx:run
+```
 
-`revision_assistant.db` is created automatically the first time the app runs,
-in the project's working directory.
+No API key configuration is required.
 
-See the full write-up (including a testing checklist) for more detail.
+## Flashcard JSON
+
+```json
+{
+  "topic": "Dijkstra's Algorithm",
+  "flashcards": [
+    {
+      "question": "What is Dijkstra's algorithm used for?",
+      "answer": "Finding shortest paths from a source vertex."
+    }
+  ]
+}
+```
+
+## Quiz JSON
+
+```json
+{
+  "topic": "Dijkstra's Algorithm",
+  "questions": [
+    {
+      "question": "Which structure is commonly used in Dijkstra's algorithm?",
+      "options": [
+        "Stack",
+        "Priority Queue",
+        "Linked List",
+        "Hash Table"
+      ],
+      "correctAnswer": "Priority Queue"
+    }
+  ]
+}
+```
+
+The topic must already exist under the selected subject. Importing a JSON file never writes to the database until the user confirms the preview.
+
+## Validation
+
+Flashcards require a topic, a non-empty `flashcards` array, and non-empty question/answer values.
+
+Quiz imports require a topic, a non-empty `questions` array, exactly four non-empty distinct options, and a `correctAnswer` that matches one option or is `A`, `B`, `C`, or `D`.
+
+## Scope
+
+This milestone intentionally does not implement in-app AI generation, concurrency, or the later API demonstration.
