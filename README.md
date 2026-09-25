@@ -1,29 +1,31 @@
-# Revision Assistant — Milestone 4B-2
+# Revision Assistant — Milestone 4B-3
 
-Milestone 4B-2 builds on 4B-1 without redesigning the JSON import workflow.
+Final integration, cleanup, regression-test checklist, and viva documentation for the Revision Assistant project.
 
-## Primary AI-content workflow
+## 1. Final workflow
 
-The application does **not** require an AI-provider API key. Generate structured JSON with any external AI tool, save it as `.json`, and import it through the Flashcards or Quiz screen.
+The primary AI-content workflow is intentionally provider-independent. The application does **not** call an AI provider and does **not** require an AI API key.
 
 ```text
 Study material
     ↓
-Any external AI tool
+Any AI tool
     ↓
-Structured JSON
+Required JSON
     ↓
-.json file
+Save as .json
     ↓
 Revision Assistant
     ↓
 Import JSON
     ↓
-Jackson DTO
+Jackson deserialization
+    ↓
+DTO
     ↓
 Validation
     ↓
-Preview
+Preview / selection
     ↓
 User confirms
     ↓
@@ -34,65 +36,15 @@ DAO
 SQLite
 ```
 
-## Milestone 4B-2 API demonstration
+The imported data is saved only after the user confirms the preview. Existing manual flashcard and quiz entry continues to use the same services and database.
 
-The Study Tools → API Demo tab contains a small public API demonstration using:
+### Copy Prompt
 
-`https://jsonplaceholder.typicode.com/todos/1`
+The **Copy Prompt** button copies a small schema-specific prompt to the clipboard. A user may paste that prompt into any AI tool and ask it to produce compatible JSON. This is a convenience feature; it is not an API integration.
 
-No API key, account, environment variable, model name, or backend configuration is required.
+## 2. JSON format
 
-The demonstration performs:
-
-```text
-JavaFX button
-    ↓
-JavaFX Task
-    ↓
-Background thread
-    ↓
-Java HttpClient
-    ↓
-HTTP response
-    ↓
-Jackson ObjectMapper
-    ↓
-ApiDemoResponseDTO
-    ↓
-JavaFX Application Thread
-    ↓
-Displayed DTO values
-```
-
-The service handles network failures, timeouts, non-2xx HTTP responses, empty responses, invalid JSON, and unexpected response structures with concise user-facing messages.
-
-## Concurrency
-
-The API request is performed in a JavaFX `Task` on a daemon background thread. The initiating button is disabled while the task runs, a progress indicator is shown, and a Cancel button is available.
-
-Flashcard and Quiz JSON deserialization/validation also run in JavaFX `Task`s on daemon background threads. Preview dialogs and all JavaFX control updates happen only after the task completes on the JavaFX Application Thread.
-
-Database writes remain in the existing service/DAO architecture and occur only after the user confirms the preview.
-
-## Run
-
-Requirements:
-
-- JDK 26
-- Maven
-- Network access is only needed for the optional API demonstration
-
-Run:
-
-```bash
-mvn clean javafx:run
-```
-
-The application starts without any AI API configuration.
-
-## JSON examples
-
-### Flashcards
+### Flashcard JSON
 
 ```json
 {
@@ -106,7 +58,9 @@ The application starts without any AI API configuration.
 }
 ```
 
-### Quiz
+Validation requires a non-empty `topic`, a non-empty `flashcards` array, and non-empty `question` and `answer` values for every card.
+
+### Quiz JSON
 
 ```json
 {
@@ -126,39 +80,219 @@ The application starts without any AI API configuration.
 }
 ```
 
-## Milestone 4B-2 test checklist
+Validation requires a non-empty `topic`, a non-empty `questions` array, exactly four distinct non-empty options, and a `correctAnswer` that matches one of the four options. The validator also derives the corresponding A/B/C/D option letter for the existing quiz model.
 
-- [ ] Application starts with no AI API key or configuration.
-- [ ] API Demo successful response is displayed.
-- [ ] API/network failure produces a concise error/status and leaves the rest of the app usable.
-- [ ] HTTP error is handled without a stack trace in the UI.
-- [ ] Invalid/empty/unexpected API response is handled.
-- [ ] API request keeps the JavaFX UI responsive.
-- [ ] API Cancel button stops/cancels the JavaFX task when applicable.
-- [ ] Valid flashcard JSON imports correctly.
-- [ ] Valid quiz JSON imports correctly.
-- [ ] Larger JSON import processing occurs in a background task.
-- [ ] Import buttons are disabled during processing and restored afterward.
-- [ ] Invalid JSON does not change the database.
-- [ ] Preview still supports selection and cancellation.
-- [ ] Only confirmed/selected imported items are persisted.
-- [ ] Existing manual flashcard functionality still works.
-- [ ] Existing manual quiz functionality still works.
-- [ ] Existing Milestone 1–4A functionality remains available.
+### Jackson and DTOs
 
-## Project structure additions
+Jackson's `ObjectMapper` reads the `.json` file and deserializes it directly into `FlashcardImportDTO` or `QuizImportDTO`, which contain `ImportedFlashcardDTO` or `ImportedQuizQuestionDTO` items. No manual JSON string parsing is used.
+
+The DTOs are temporary data-transfer objects used for import, validation, and preview. They do not write directly to SQLite. After confirmation, the existing `FlashcardService` or `QuizService` performs the normal service → DAO → SQLite persistence flow.
+
+## 3. Public API demonstration
+
+The Study Tools → API Demo tab is a deliberately small demonstration of HTTP, JSON, Jackson, and JavaFX integration.
+
+**Endpoint:** `https://jsonplaceholder.typicode.com/todos/1`
+
+No API key, account, environment variable, model name, or project configuration is required.
+
+```text
+JavaFX button
+    ↓
+JavaFX Task
+    ↓
+Daemon background thread
+    ↓
+Java HttpClient
+    ↓
+HTTP response
+    ↓
+JSON text
+    ↓
+Jackson ObjectMapper
+    ↓
+ApiDemoResponseDTO
+    ↓
+JavaFX Application Thread
+    ↓
+Displayed DTO values
+```
+
+`ApiDemoService` handles network failures, timeouts, non-2xx HTTP responses, empty responses, malformed JSON, and missing/unexpected DTO fields. The API demo is isolated from the normal CRUD, import, planner, and study flows.
+
+## 4. Concurrency
+
+JavaFX controls must be accessed on the **JavaFX Application Thread**. Blocking work such as HTTP requests and potentially large JSON deserialization is therefore performed inside JavaFX `Task` objects running on daemon worker threads.
+
+For API loading:
+
+- The Load button is disabled while a request is active.
+- A Cancel button and progress indicator show the active state.
+- Success, failure, and cancellation handlers restore the controls.
+- `Task` completion handlers run on the JavaFX Application Thread, so UI updates are safe.
+- The worker thread is daemonized and terminates when its task finishes.
+- Cancellation does not modify the database.
+
+For JSON imports:
+
+- The file is read, deserialized, and validated in a background `Task`.
+- Import controls are disabled while processing.
+- The preview dialog opens only after the background task succeeds.
+- Database writes remain in the existing service/DAO layer and happen only after user confirmation.
+
+The project does not add a permanent executor, thread pool, or background service that would need application shutdown management.
+
+## 5. Final architecture
+
+```text
+FXML
+  ↓
+Controller
+  ↓
+Service
+  ├── JSON import → Jackson → DTO → validation → preview
+  ├── API demo → HttpClient → JSON → Jackson → DTO
+  └── Existing business services
+          ↓
+        DAO
+          ↓
+       SQLite
+```
+
+The controllers coordinate UI state. Services contain import, API, business, and persistence logic. DAOs remain responsible for database access. No database schema redesign was introduced for Milestone 4B-3.
+
+## 6. Project structure
 
 ```text
 src/main/java/com/revisionassistant/
-├── controller/
-│   ├── FlashcardController.java      # JSON import Task orchestration
-│   ├── QuizController.java           # JSON import Task orchestration
-│   └── StudyToolsController.java     # API demo Task orchestration
-├── dto/
-│   └── ApiDemoResponseDTO.java       # Public API response DTO
-└── service/
-    ├── ApiDemoException.java         # User-facing API failure type
-    └── ApiDemoService.java           # HTTP + Jackson API processing
+├── algorithm/          # Graph and planning algorithms
+├── controller/         # JavaFX controllers
+├── dao/                # SQLite data-access objects
+├── database/           # Database connection/initialisation
+├── dto/                # JSON/API data-transfer objects
+├── model/              # Existing domain models
+├── service/            # Business, import, planner and API-demo services
+└── Main.java
+
+src/main/resources/com/revisionassistant/
+├── css/style.css
+└── fxml/               # Application views and import preview dialogs
+
+revision_assistant.db  # Existing SQLite database; no schema replacement
+pom.xml                # JDK 26 + JavaFX + SQLite + Jackson dependencies
+README.md
 ```
 
-No database schema changes are introduced by Milestone 4B-2.
+## 7. Dependencies
+
+Only the required external dependencies are used:
+
+| Dependency | Version | Purpose |
+|---|---:|---|
+| JavaFX Controls | 26.0.2 | JavaFX UI controls |
+| JavaFX FXML | 26.0.2 | FXML views/controllers |
+| SQLite JDBC | 3.53.2.1 | SQLite database access |
+| Jackson Databind | 2.19.2 | JSON deserialization |
+
+The public API demo uses Java's built-in `java.net.http.HttpClient`; no extra HTTP library is required.
+
+Build target: **JDK 26** (`maven.compiler.release=26`).
+
+## 8. Viva preparation
+
+### Why is JSON used?
+
+JSON is a simple, portable text format. It lets the user generate structured study content with any AI tool and move that content into the application without coupling the application to one AI provider.
+
+### What does Jackson do?
+
+Jackson converts JSON text into Java objects. In this project, `ObjectMapper.readValue(...)` performs the deserialization into DTO classes.
+
+### What is deserialization?
+
+Deserialization is the process of converting serialized data, here JSON text, back into structured Java objects.
+
+### What is a DTO?
+
+A Data Transfer Object is a simple object used to carry data between parts of a system. The import DTOs represent the JSON structure before the data is accepted by the existing application services.
+
+### How is an API response handled?
+
+`ApiDemoService` creates an HTTP GET request, sends it with Java `HttpClient`, checks the HTTP response, verifies that the body is non-empty, and passes the JSON body to Jackson. Jackson creates an `ApiDemoResponseDTO`, which is returned to the controller for display.
+
+### Why should the API request not run on the JavaFX Application Thread?
+
+An HTTP request can wait on the network. If it blocks the JavaFX Application Thread, the window cannot repaint or respond to input. Running the request in a background `Task` keeps the UI responsive.
+
+### How is Task used?
+
+A JavaFX `Task<T>` defines the background operation in its `call()` method. The worker thread runs the task, while `setOnSucceeded`, `setOnFailed`, and `setOnCancelled` handlers return control to safe UI updates.
+
+### How does imported data reach SQLite?
+
+The controller starts the background JSON import. Jackson creates DTOs, validation checks the DTO contents, and a preview lets the user select and confirm records. The controller then calls the existing `FlashcardService` or `QuizService`, which uses the existing DAO to insert records into SQLite.
+
+## 9. Final regression checklist
+
+### Milestones 1–3
+
+- [ ] Subject CRUD
+- [ ] Topic CRUD
+- [ ] Topic dependencies and algorithms
+- [ ] Study Planner
+- [ ] Exams
+- [ ] Study sessions
+- [ ] Dashboard
+- [ ] Flashcards
+- [ ] Quiz
+- [ ] Frequently forgotten / difficult content
+- [ ] Existing database data remains available
+
+### Milestone 4
+
+- [ ] Flashcard JSON import
+- [ ] Quiz JSON import
+- [ ] Jackson deserialization
+- [ ] DTO validation
+- [ ] Preview and selection
+- [ ] Confirm/cancel behavior
+- [ ] Public API demonstration
+- [ ] Network/timeout/HTTP/JSON/structure error handling
+- [ ] Background API processing
+- [ ] Background JSON processing
+- [ ] Loading indicators and button state
+- [ ] API cancellation
+- [ ] No AI API key required
+- [ ] Manual flashcard and quiz functionality still works
+
+### Final checks
+
+- [ ] Start application with no AI-provider configuration
+- [ ] Import a valid flashcard JSON file and confirm records appear in SQLite
+- [ ] Import a valid quiz JSON file and confirm questions appear in SQLite
+- [ ] Try malformed JSON and confirm no database change
+- [ ] Try an invalid quiz with the wrong number of options and confirm validation stops the import
+- [ ] Cancel an import preview without saving
+- [ ] Load the public API sample and verify DTO values are displayed
+- [ ] Verify the API tab does not block normal navigation
+- [ ] Verify API errors restore the controls
+- [ ] Verify the project compiles and runs under JDK 26 with Maven
+
+## 10. Milestone 4B-3 cleanup
+
+The following obsolete provider-specific AI integration was removed because the current architecture no longer uses it:
+
+- `src/main/java/com/revisionassistant/api/ApiClient.java` — old provider-specific HTTP client requiring an API key.
+- `src/main/java/com/revisionassistant/api/ApiConfig.java` — old environment/configuration reader for AI credentials.
+- `src/main/java/com/revisionassistant/api/ApiException.java` — exception type belonging only to the removed provider client.
+- `src/main/java/com/revisionassistant/api/ApiResponse.java` — provider-specific response model.
+- `src/main/java/com/revisionassistant/service/ApiService.java` — old AI-generation service built around the removed provider client.
+- `GeneratedFlashcardDTO.java` and `GeneratedQuestionDTO.java` — preview DTOs for the removed direct-AI workflow.
+- `GeneratedFlashcardsDialogController.java` and `GeneratedQuestionsDialogController.java` — unused dialogs for that removed workflow.
+- `GeneratedFlashcardsDialog.fxml` and `GeneratedQuestionsDialog.fxml` — FXML views for the removed workflow.
+
+No existing CRUD, study, planner, import, preview, or SQLite functionality was removed.
+
+## 11. Verification note
+
+The project was reviewed statically and the source/resource references were checked during Milestone 4B-3 cleanup. The supplied build environment used for this review has JDK 21 and does not have Maven installed, so a full Maven/JDK 26 compile and live JavaFX regression run could not be executed here. The project remains configured for JDK 26, and the final checklist above should be run on a machine with JDK 26 and Maven before submission.

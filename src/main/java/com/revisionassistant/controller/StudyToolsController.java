@@ -89,13 +89,7 @@ public class StudyToolsController {
     private final TopicDependencyService dependencyService = new TopicDependencyService();
     private final StudyPlannerService plannerService = new StudyPlannerService();
     private final ApiDemoService apiDemoService = new ApiDemoService();
-    private javafx.concurrent.Task<ApiDemoResponseDTO> apiTask =
-            new javafx.concurrent.Task<>() {
-                @Override
-                protected ApiDemoResponseDTO call() throws Exception {
-                    return apiDemoService.loadSample();
-                }
-            };
+    private javafx.concurrent.Task<ApiDemoResponseDTO> apiTask;
 
     private final ObservableList<Subject> subjects = FXCollections.observableArrayList();
     private final ObservableList<Topic> allTopics = FXCollections.observableArrayList();
