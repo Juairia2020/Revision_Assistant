@@ -5,8 +5,7 @@
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
@@ -40,15 +39,8 @@
         </VBox>
     </top>
     <center>
-        <TableView fx:id="topicsTable" editable="true" BorderPane.alignment="CENTER">
-            <columns>
-                <TableColumn fx:id="idColumn" text="ID" prefWidth="60"/>
-                <TableColumn fx:id="nameColumn" text="Name" prefWidth="260"/>
-                <TableColumn fx:id="completedColumn" text="Completed" prefWidth="100"/>
-            </columns>
-            <BorderPane.margin>
-                <Insets top="0" right="16" bottom="16" left="16"/>
-            </BorderPane.margin>
-        </TableView>
+        <ListView fx:id="topicsList" BorderPane.alignment="CENTER" styleClass="feature-list">
+            <BorderPane.margin><Insets top="0" right="16" bottom="16" left="16"/></BorderPane.margin>
+        </ListView>
     </center>
 </BorderPane>

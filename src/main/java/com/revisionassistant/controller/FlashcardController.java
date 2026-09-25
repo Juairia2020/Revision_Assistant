@@ -25,10 +25,13 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.Button;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -72,17 +75,7 @@ public class FlashcardController {
     private ComboBox<RevisionStatus> filterStatusComboBox;
 
     @FXML
-    private TableView<Flashcard> flashcardsTable;
-    @FXML
-    private TableColumn<Flashcard, String> frontColumn;
-    @FXML
-    private TableColumn<Flashcard, String> subjectColumn;
-    @FXML
-    private TableColumn<Flashcard, String> topicColumn;
-    @FXML
-    private TableColumn<Flashcard, Boolean> difficultColumn;
-    @FXML
-    private TableColumn<Flashcard, String> statusColumn;
+    private FlowPane cardsPane;
 
     @FXML
     private Label studyFrontLabel;
@@ -116,7 +109,7 @@ public class FlashcardController {
     public void initialize() {
         setUpFormControls();
         setUpFilterControls();
-        setUpTable();
+        setUpCardLibrary();
         refreshSubjects();
         refreshFlashcards();
         updateStudyPanel();
@@ -180,47 +173,47 @@ public class FlashcardController {
         filterStatusComboBox.valueProperty().addListener((obs, oldValue, newValue) -> applyFilters());
     }
 
-    private void setUpTable() {
-        frontColumn.setCellValueFactory(data -> new SimpleStringProperty(truncate(data.getValue().getFront())));
+    private void setUpCardLibrary() {
+        cardsPane.setHgap(14);
+        cardsPane.setVgap(14);
+        cardsPane.setPrefWrapLength(760);
+        cardsPane.widthProperty().addListener((obs, oldValue, newValue) ->
+                cardsPane.setPrefWrapLength(Math.max(420, newValue.doubleValue() - 24)));
+        cardsPane.setStyle("-fx-alignment: TOP_LEFT;");
+    }
 
-        subjectColumn.setCellValueFactory(data -> {
-            Subject subject = subjectsById.get(data.getValue().getSubjectId());
-            return new SimpleStringProperty(subject == null ? "—" : subject.getName());
-        });
+    private void rebuildCardLibrary() {
+        cardsPane.getChildren().clear();
+        for (int i = 0; i < flashcards.size(); i++) {
+            Flashcard card = flashcards.get(i);
+            VBox tile = new VBox(8);
+            tile.getStyleClass().add("flashcard-tile");
+            tile.setPrefWidth(250);
+            tile.setMinHeight(150);
+            Label badge = new Label(card.isDifficult() ? "DIFFICULT" : card.getRevisionStatus().getLabel());
+            badge.getStyleClass().add(card.isDifficult() ? "badge-warning" : "badge-accent");
+            Label front = new Label(truncate(card.getFront()));
+            front.setWrapText(true);
+            front.getStyleClass().add("flashcard-tile-front");
+            Label meta = new Label((subjectsById.get(card.getSubjectId()) == null ? "" : subjectsById.get(card.getSubjectId()).getName())
+                    + (card.getTopicId() == null ? "" : " • " + (topicsById.get(card.getTopicId()) == null ? "" : topicsById.get(card.getTopicId()).getName())));
+            meta.getStyleClass().add("row-meta");
+            tile.getChildren().addAll(badge, front, meta);
+            int finalI = i;
+            tile.setOnMouseClicked(e -> selectFlashcard(finalI));
+            cardsPane.getChildren().add(tile);
+        }
+    }
 
-        topicColumn.setCellValueFactory(data -> {
-            Integer topicId = data.getValue().getTopicId();
-            Topic topic = topicId == null ? null : topicsById.get(topicId);
-            return new SimpleStringProperty(topic == null ? "—" : topic.getName());
-        });
-
-        difficultColumn.setCellValueFactory(data -> {
-            Flashcard card = data.getValue();
-            SimpleBooleanProperty property = new SimpleBooleanProperty(card.isDifficult());
-            property.addListener((obs, oldVal, newVal) -> {
-                try {
-                    flashcardService.setDifficult(card.getId(), newVal);
-                    card.setDifficult(newVal);
-                } catch (SQLException e) {
-                    showAlert(Alert.AlertType.ERROR, "Database error", e.getMessage());
-                }
-            });
-            return property;
-        });
-        difficultColumn.setCellFactory(CheckBoxTableCell.forTableColumn(difficultColumn));
-
-        statusColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getRevisionStatus().getLabel()));
-
-        flashcardsTable.setItems(flashcards);
-        flashcardsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue != null) {
-                populateForm(newValue);
-                studyIndex = flashcards.indexOf(newValue);
-                studyShowingBack = false;
-                updateStudyPanel();
-            }
-        });
+    private void selectFlashcard(int index) {
+        if (index < 0 || index >= flashcards.size()) return;
+        studyIndex = index;
+        studyShowingBack = false;
+        populateForm(flashcards.get(index));
+        updateStudyPanel();
+        for (int i = 0; i < cardsPane.getChildren().size(); i++) {
+            cardsPane.getChildren().get(i).pseudoClassStateChanged(javafx.css.PseudoClass.getPseudoClass("selected"), i == index);
+        }
     }
 
     private void populateForm(Flashcard card) {
@@ -263,7 +256,7 @@ public class FlashcardController {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Import flashcards from JSON");
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON files", "*.json"));
-        java.io.File file = chooser.showOpenDialog(flashcardsTable.getScene().getWindow());
+        java.io.File file = chooser.showOpenDialog(cardsPane.getScene().getWindow());
         if (file == null) {
             return;
         }
@@ -395,7 +388,7 @@ public class FlashcardController {
 
     @FXML
     private void handleEditFlashcard() {
-        Flashcard selected = flashcardsTable.getSelectionModel().getSelectedItem();
+        Flashcard selected = getSelectedFlashcard();
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "No flashcard selected", "Select a flashcard to edit first.");
             return;
@@ -418,7 +411,7 @@ public class FlashcardController {
 
     @FXML
     private void handleDeleteFlashcard() {
-        Flashcard selected = flashcardsTable.getSelectionModel().getSelectedItem();
+        Flashcard selected = getSelectedFlashcard();
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "No flashcard selected", "Select a flashcard to delete first.");
             return;
@@ -464,7 +457,7 @@ public class FlashcardController {
         }
         studyIndex = studyIndex <= 0 ? flashcards.size() - 1 : studyIndex - 1;
         studyShowingBack = false;
-        flashcardsTable.getSelectionModel().select(studyIndex);
+        selectFlashcard(studyIndex);
     }
 
     @FXML
@@ -474,7 +467,18 @@ public class FlashcardController {
         }
         studyIndex = studyIndex >= flashcards.size() - 1 ? 0 : studyIndex + 1;
         studyShowingBack = false;
-        flashcardsTable.getSelectionModel().select(studyIndex);
+        selectFlashcard(studyIndex);
+    }
+
+    private Flashcard getSelectedFlashcard() {
+        return studyIndex >= 0 && studyIndex < flashcards.size() ? flashcards.get(studyIndex) : null;
+    }
+
+    private void clearSelectedFlashcard() {
+        studyIndex = -1;
+        studyShowingBack = false;
+        for (var node : cardsPane.getChildren()) node.pseudoClassStateChanged(javafx.css.PseudoClass.getPseudoClass("selected"), false);
+        updateStudyPanel();
     }
 
     private void updateStudyPanel() {
@@ -501,6 +505,7 @@ public class FlashcardController {
             flashcards.setAll(filtered);
             studyIndex = flashcards.isEmpty() ? -1 : 0;
             studyShowingBack = false;
+            rebuildCardLibrary();
             updateStudyPanel();
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Database error", "Could not load flashcards: " + e.getMessage());
@@ -574,7 +579,7 @@ public class FlashcardController {
         backArea.clear();
         difficultCheckBox.setSelected(false);
         revisionStatusComboBox.setValue(RevisionStatus.NOT_STARTED);
-        flashcardsTable.getSelectionModel().clearSelection();
+        clearSelectedFlashcard();
     }
 
     private String truncate(String text) {

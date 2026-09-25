@@ -12,11 +12,11 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
 import javafx.scene.control.TextField;
-import javafx.scene.control.cell.CheckBoxTableCell;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.util.StringConverter;
 
 import java.sql.SQLException;
@@ -32,13 +32,7 @@ public class TopicController {
     @FXML
     private ComboBox<Subject> subjectComboBox;
     @FXML
-    private TableView<Topic> topicsTable;
-    @FXML
-    private TableColumn<Topic, Integer> idColumn;
-    @FXML
-    private TableColumn<Topic, String> nameColumn;
-    @FXML
-    private TableColumn<Topic, Boolean> completedColumn;
+    private ListView<Topic> topicsList;
     @FXML
     private TextField topicNameField;
     @FXML
@@ -66,30 +60,21 @@ public class TopicController {
         });
         subjectComboBox.valueProperty().addListener((obs, oldValue, newValue) -> refreshTopics());
 
-        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-
-        completedColumn.setCellValueFactory(cellData -> {
-            Topic topic = cellData.getValue();
-            SimpleBooleanProperty property = new SimpleBooleanProperty(topic.isCompleted());
-            property.addListener((obs, oldVal, newVal) -> {
-                try {
-                    topicService.setCompleted(topic.getId(), newVal);
-                    topic.setCompleted(newVal);
-                } catch (SQLException e) {
-                    showAlert(Alert.AlertType.ERROR, "Database error", e.getMessage());
-                }
-            });
-            return property;
-        });
-        completedColumn.setCellFactory(CheckBoxTableCell.forTableColumn(completedColumn));
-
-        topicsTable.setItems(topics);
-        topicsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue != null) {
-                topicNameField.setText(newValue.getName());
-                completedCheckBox.setSelected(newValue.isCompleted());
+        topicsList.setItems(topics);
+        topicsList.setCellFactory(list -> new ListCell<>() {
+            @Override protected void updateItem(Topic topic, boolean empty) {
+                super.updateItem(topic, empty);
+                if (empty || topic == null) { setGraphic(null); return; }
+                HBox row = new HBox(12); row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                CheckBox check = new CheckBox(); check.setSelected(topic.isCompleted());
+                check.setOnAction(e -> { try { topicService.setCompleted(topic.getId(), check.isSelected()); topic.setCompleted(check.isSelected()); } catch (SQLException ex) { showAlert(Alert.AlertType.ERROR,"Database error",ex.getMessage()); } });
+                Label name = new Label(topic.getName()); name.getStyleClass().add("card-title");
+                Label meta = new Label(topic.isCompleted() ? "Completed" : "In progress"); meta.getStyleClass().add(topic.isCompleted() ? "badge-success" : "badge-accent");
+                row.getChildren().addAll(check, name, meta); setGraphic(row);
             }
+        });
+        topicsList.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue != null) { topicNameField.setText(newValue.getName()); completedCheckBox.setSelected(newValue.isCompleted()); }
         });
 
         refreshSubjects();
@@ -110,7 +95,7 @@ public class TopicController {
 
     @FXML
     private void handleEditTopic() {
-        Topic selected = topicsTable.getSelectionModel().getSelectedItem();
+        Topic selected = topicsList.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "No topic selected", "Select a topic to edit first.");
             return;
@@ -127,7 +112,7 @@ public class TopicController {
 
     @FXML
     private void handleDeleteTopic() {
-        Topic selected = topicsTable.getSelectionModel().getSelectedItem();
+        Topic selected = topicsList.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "No topic selected", "Select a topic to delete first.");
             return;

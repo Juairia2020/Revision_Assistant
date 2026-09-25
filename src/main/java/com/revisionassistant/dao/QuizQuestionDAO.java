@@ -1,155 +1,23 @@
 package com.revisionassistant.dao;
-
 import com.revisionassistant.database.DatabaseManager;
-import com.revisionassistant.model.QuizOption;
-import com.revisionassistant.model.QuizQuestion;
+import com.revisionassistant.session.CurrentUser;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import com.revisionassistant.model.QuizOption;
+import com.revisionassistant.model.QuizQuestion;
+import java.sql.Types;
 
-/**
- * Direct SQL access for the quiz_questions table. No validation or
- * business rules live here - callers (the service layer) are
- * responsible for that. Every statement is a PreparedStatement.
- */
 public class QuizQuestionDAO {
-
-    private static final String COLUMNS =
-            "id, subject_id, topic_id, question_text, option_a, option_b, option_c, option_d, correct_option";
-
-    public QuizQuestion insert(QuizQuestion question) throws SQLException {
-        String sql = "INSERT INTO quiz_questions (subject_id, topic_id, question_text, "
-                + "option_a, option_b, option_c, option_d, correct_option) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-            bindQuestion(statement, question);
-            statement.executeUpdate();
-
-            try (ResultSet keys = statement.getGeneratedKeys()) {
-                if (keys.next()) {
-                    question.setId(keys.getInt(1));
-                }
-            }
-        }
-        return question;
-    }
-
-    public List<QuizQuestion> findAll() throws SQLException {
-        String sql = "SELECT " + COLUMNS + " FROM quiz_questions ORDER BY subject_id, id";
-        List<QuizQuestion> questions = new ArrayList<>();
-
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-
-            while (resultSet.next()) {
-                questions.add(mapRow(resultSet));
-            }
-        }
-        return questions;
-    }
-
-    public QuizQuestion findById(int id) throws SQLException {
-        String sql = "SELECT " + COLUMNS + " FROM quiz_questions WHERE id = ?";
-
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setInt(1, id);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return mapRow(resultSet);
-                }
-            }
-        }
-        return null;
-    }
-
-    public void update(QuizQuestion question) throws SQLException {
-        String sql = "UPDATE quiz_questions SET subject_id = ?, topic_id = ?, question_text = ?, "
-                + "option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_option = ? WHERE id = ?";
-
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            bindQuestion(statement, question);
-            statement.setInt(9, question.getId());
-            statement.executeUpdate();
-        }
-    }
-
-    public void delete(int id) throws SQLException {
-        String sql = "DELETE FROM quiz_questions WHERE id = ?";
-
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setInt(1, id);
-            statement.executeUpdate();
-        }
-    }
-
-    /** Used by the service layer to decide whether a subject/topic is safe to delete. */
-    public int countBySubjectId(int subjectId) throws SQLException {
-        return countWhere("subject_id = ?", subjectId);
-    }
-
-    public int countByTopicId(int topicId) throws SQLException {
-        return countWhere("topic_id = ?", topicId);
-    }
-
-    private int countWhere(String whereClause, int id) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM quiz_questions WHERE " + whereClause;
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setInt(1, id);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getInt(1);
-                }
-            }
-        }
-        return 0;
-    }
-
-    private void bindQuestion(PreparedStatement statement, QuizQuestion question) throws SQLException {
-        statement.setInt(1, question.getSubjectId());
-        if (question.getTopicId() == null) {
-            statement.setNull(2, Types.INTEGER);
-        } else {
-            statement.setInt(2, question.getTopicId());
-        }
-        statement.setString(3, question.getQuestionText());
-        statement.setString(4, question.getOptionA());
-        statement.setString(5, question.getOptionB());
-        statement.setString(6, question.getOptionC());
-        statement.setString(7, question.getOptionD());
-        statement.setString(8, question.getCorrectOption().name());
-    }
-
-    private QuizQuestion mapRow(ResultSet resultSet) throws SQLException {
-        int topicIdValue = resultSet.getInt("topic_id");
-        Integer topicId = resultSet.wasNull() ? null : topicIdValue;
-
-        return new QuizQuestion(
-                resultSet.getInt("id"),
-                resultSet.getInt("subject_id"),
-                topicId,
-                resultSet.getString("question_text"),
-                resultSet.getString("option_a"),
-                resultSet.getString("option_b"),
-                resultSet.getString("option_c"),
-                resultSet.getString("option_d"),
-                QuizOption.fromString(resultSet.getString("correct_option"))
-        );
-    }
+    private static final String COLUMNS="id,subject_id,topic_id,question_text,option_a,option_b,option_c,option_d,correct_option";
+    public QuizQuestion insert(QuizQuestion x)throws SQLException{String sql="INSERT INTO quiz_questions(user_id,subject_id,topic_id,question_text,option_a,option_b,option_c,option_d,correct_option) VALUES(?,?,?,?,?,?,?,?,?)";try(Connection c=DatabaseManager.getConnection();PreparedStatement s=c.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS)){s.setInt(1,CurrentUser.get().getId());bind(s,x,2);s.executeUpdate();try(ResultSet k=s.getGeneratedKeys()){if(k.next())x.setId(k.getInt(1));}}return x;}
+    public List<QuizQuestion> findAll()throws SQLException{String sql="SELECT "+COLUMNS+" FROM quiz_questions WHERE user_id=? ORDER BY subject_id,id";List<QuizQuestion> out=new ArrayList<>();try(Connection c=DatabaseManager.getConnection();PreparedStatement s=c.prepareStatement(sql)){s.setInt(1,CurrentUser.get().getId());try(ResultSet r=s.executeQuery()){while(r.next())out.add(mapRow(r));}}return out;}
+    public QuizQuestion findById(int id)throws SQLException{String sql="SELECT "+COLUMNS+" FROM quiz_questions WHERE id=? AND user_id=?";try(Connection c=DatabaseManager.getConnection();PreparedStatement s=c.prepareStatement(sql)){s.setInt(1,id);s.setInt(2,CurrentUser.get().getId());try(ResultSet r=s.executeQuery()){if(r.next())return mapRow(r);}}return null;}
+    public void update(QuizQuestion x)throws SQLException{String sql="UPDATE quiz_questions SET subject_id=?,topic_id=?,question_text=?,option_a=?,option_b=?,option_c=?,option_d=?,correct_option=? WHERE id=? AND user_id=?";try(Connection c=DatabaseManager.getConnection();PreparedStatement s=c.prepareStatement(sql)){bind(s,x,1);s.setInt(9,x.getId());s.setInt(10,CurrentUser.get().getId());s.executeUpdate();}}
+    public void delete(int id)throws SQLException{String sql="DELETE FROM quiz_questions WHERE id=? AND user_id=?";try(Connection c=DatabaseManager.getConnection();PreparedStatement s=c.prepareStatement(sql)){s.setInt(1,id);s.setInt(2,CurrentUser.get().getId());s.executeUpdate();}}
+    public int countBySubjectId(int id)throws SQLException{return count("subject_id=?",id);} public int countByTopicId(int id)throws SQLException{return count("topic_id=?",id);}
+    private int count(String clause,int id)throws SQLException{String sql="SELECT COUNT(*) FROM quiz_questions WHERE "+clause+" AND user_id=?";try(Connection c=DatabaseManager.getConnection();PreparedStatement s=c.prepareStatement(sql)){s.setInt(1,id);s.setInt(2,CurrentUser.get().getId());try(ResultSet r=s.executeQuery()){if(r.next())return r.getInt(1);}}return 0;}
+    private void bind(PreparedStatement s,QuizQuestion q,int o)throws SQLException{s.setInt(o,q.getSubjectId());if(q.getTopicId()==null)s.setNull(o+1,Types.INTEGER);else s.setInt(o+1,q.getTopicId());s.setString(o+2,q.getQuestionText());s.setString(o+3,q.getOptionA());s.setString(o+4,q.getOptionB());s.setString(o+5,q.getOptionC());s.setString(o+6,q.getOptionD());s.setString(o+7,q.getCorrectOption().name());}
+    private QuizQuestion mapRow(ResultSet r)throws SQLException{int tv=r.getInt("topic_id");Integer topic=r.wasNull()?null:tv;return new QuizQuestion(r.getInt("id"),r.getInt("subject_id"),topic,r.getString("question_text"),r.getString("option_a"),r.getString("option_b"),r.getString("option_c"),r.getString("option_d"),QuizOption.fromString(r.getString("correct_option")));}
 }
