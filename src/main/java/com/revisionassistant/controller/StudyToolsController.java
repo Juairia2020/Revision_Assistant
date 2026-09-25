@@ -1,8 +1,11 @@
 package com.revisionassistant.controller;
 
+import com.revisionassistant.dto.ApiDemoResponseDTO;
 import com.revisionassistant.model.Subject;
 import com.revisionassistant.model.Task;
 import com.revisionassistant.model.Topic;
+import com.revisionassistant.service.ApiDemoException;
+import com.revisionassistant.service.ApiDemoService;
 import com.revisionassistant.service.StudyPlannerService;
 import com.revisionassistant.service.StudyPlannerService.Strategy;
 import com.revisionassistant.service.StudyPlannerService.StudyPlan;
@@ -17,6 +20,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -67,10 +71,31 @@ public class StudyToolsController {
     @FXML
     private VBox recommendedTasksBox;
 
+    // ----- API demonstration tab ---------------------------------------
+
+    @FXML
+    private Button apiLoadButton;
+    @FXML
+    private Button apiCancelButton;
+    @FXML
+    private ProgressIndicator apiProgressIndicator;
+    @FXML
+    private Label apiStatusLabel;
+    @FXML
+    private Label apiResultLabel;
+
     private final SubjectService subjectService = new SubjectService();
     private final TopicService topicService = new TopicService();
     private final TopicDependencyService dependencyService = new TopicDependencyService();
     private final StudyPlannerService plannerService = new StudyPlannerService();
+    private final ApiDemoService apiDemoService = new ApiDemoService();
+    private javafx.concurrent.Task<ApiDemoResponseDTO> apiTask =
+            new javafx.concurrent.Task<>() {
+                @Override
+                protected ApiDemoResponseDTO call() throws Exception {
+                    return apiDemoService.loadSample();
+                }
+            };
 
     private final ObservableList<Subject> subjects = FXCollections.observableArrayList();
     private final ObservableList<Topic> allTopics = FXCollections.observableArrayList();
@@ -374,6 +399,81 @@ public class StudyToolsController {
         row.setAlignment(Pos.CENTER_LEFT);
         row.getStyleClass().add("dashboard-row");
         return row;
+    }
+
+    // ----- API demonstration ---------------------------------------------
+
+    @FXML
+    private void handleLoadApiDemo() {
+        if (apiTask != null && apiTask.isRunning()) {
+            return;
+        }
+
+        apiLoadButton.setDisable(true);
+        apiCancelButton.setDisable(false);
+        apiProgressIndicator.setVisible(true);
+        apiStatusLabel.setText("Requesting public API…");
+        apiResultLabel.setText("");
+
+        apiTask = new javafx.concurrent.Task<>() {
+            @Override
+            protected ApiDemoResponseDTO call() throws Exception {
+                if (isCancelled()) {
+                    return null;
+                }
+                ApiDemoResponseDTO result = apiDemoService.loadSample();
+                if (isCancelled()) {
+                    return null;
+                }
+                return result;
+            }
+        };
+
+        apiTask.setOnSucceeded(event -> {
+            resetApiControls();
+            ApiDemoResponseDTO result = apiTask.getValue();
+            if (result != null) {
+                apiResultLabel.setText(
+                        "HTTP JSON response converted to Java DTO\n\n"
+                                + "User ID: " + result.getUserId() + "\n"
+                                + "Record ID: " + result.getId() + "\n"
+                                + "Title: " + result.getTitle() + "\n"
+                                + "Completed: " + result.getCompleted());
+            }
+        });
+
+        apiTask.setOnFailed(event -> {
+            Throwable error = apiTask.getException();
+            resetApiControls();
+            String message = error instanceof ApiDemoException
+                    ? error.getMessage()
+                    : "The API demonstration could not be completed.";
+            apiStatusLabel.setText(message);
+            apiResultLabel.setText("");
+        });
+
+        apiTask.setOnCancelled(event -> {
+            resetApiControls();
+            apiStatusLabel.setText("API request cancelled.");
+            apiResultLabel.setText("");
+        });
+
+        Thread worker = new Thread(apiTask, "api-demo-request");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    @FXML
+    private void handleCancelApiDemo() {
+        if (apiTask != null && apiTask.isRunning()) {
+            apiTask.cancel();
+        }
+    }
+
+    private void resetApiControls() {
+        apiLoadButton.setDisable(false);
+        apiCancelButton.setDisable(true);
+        apiProgressIndicator.setVisible(false);
     }
 
     // ----- Shared helpers -------------------------------------------------
