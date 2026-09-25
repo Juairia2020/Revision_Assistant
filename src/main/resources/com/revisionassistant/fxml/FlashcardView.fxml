@@ -5,6 +5,7 @@
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
@@ -45,7 +46,9 @@
                         <Button text="Add" onAction="#handleAddFlashcard" styleClass="primary-button"/>
                         <Button text="Update" onAction="#handleEditFlashcard" styleClass="secondary-button"/>
                         <Button text="Delete" onAction="#handleDeleteFlashcard" styleClass="danger-button"/>
-                        <Button text="Import JSON" onAction="#handleImportJson" styleClass="secondary-button"/>
+                        <Button fx:id="importJsonButton" text="Import JSON" onAction="#handleImportJson" styleClass="secondary-button"/>
+                        <ProgressIndicator fx:id="importProgressIndicator" prefWidth="18" prefHeight="18" visible="false"/>
+                        <Label fx:id="importStatusLabel" styleClass="row-meta"/>
                         <Button text="Copy Prompt" onAction="#handleCopyJsonPrompt" styleClass="link-button"/>
                     </children>
                 </HBox>

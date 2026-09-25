@@ -1,29 +1,98 @@
-# Revision Assistant — Milestone 4B-1
+# Revision Assistant — Milestone 4B-2
 
-Milestone 4B-1 makes JSON-file import the primary AI-content workflow. The application does not require an AI-provider API key, environment variable, model name, or `config.properties` file.
+Milestone 4B-2 builds on 4B-1 without redesigning the JSON import workflow.
 
-## Workflow
+## Primary AI-content workflow
 
-Study material → any external AI tool → structured JSON → `.json` file → Revision Assistant → Import JSON → Jackson DTO → validation → preview → user confirmation → existing Service → DAO → SQLite.
-
-The existing manual Flashcard and Quiz workflows remain available.
-
-## Running
-
-Requirements:
-- JDK 26
-- Maven
-- JavaFX and SQLite dependencies are provided by Maven.
-
-From the project root:
+The application does **not** require an AI-provider API key. Generate structured JSON with any external AI tool, save it as `.json`, and import it through the Flashcards or Quiz screen.
 
 ```text
+Study material
+    ↓
+Any external AI tool
+    ↓
+Structured JSON
+    ↓
+.json file
+    ↓
+Revision Assistant
+    ↓
+Import JSON
+    ↓
+Jackson DTO
+    ↓
+Validation
+    ↓
+Preview
+    ↓
+User confirms
+    ↓
+Existing Service
+    ↓
+DAO
+    ↓
+SQLite
+```
+
+## Milestone 4B-2 API demonstration
+
+The Study Tools → API Demo tab contains a small public API demonstration using:
+
+`https://jsonplaceholder.typicode.com/todos/1`
+
+No API key, account, environment variable, model name, or backend configuration is required.
+
+The demonstration performs:
+
+```text
+JavaFX button
+    ↓
+JavaFX Task
+    ↓
+Background thread
+    ↓
+Java HttpClient
+    ↓
+HTTP response
+    ↓
+Jackson ObjectMapper
+    ↓
+ApiDemoResponseDTO
+    ↓
+JavaFX Application Thread
+    ↓
+Displayed DTO values
+```
+
+The service handles network failures, timeouts, non-2xx HTTP responses, empty responses, invalid JSON, and unexpected response structures with concise user-facing messages.
+
+## Concurrency
+
+The API request is performed in a JavaFX `Task` on a daemon background thread. The initiating button is disabled while the task runs, a progress indicator is shown, and a Cancel button is available.
+
+Flashcard and Quiz JSON deserialization/validation also run in JavaFX `Task`s on daemon background threads. Preview dialogs and all JavaFX control updates happen only after the task completes on the JavaFX Application Thread.
+
+Database writes remain in the existing service/DAO architecture and occur only after the user confirms the preview.
+
+## Run
+
+Requirements:
+
+- JDK 26
+- Maven
+- Network access is only needed for the optional API demonstration
+
+Run:
+
+```bash
 mvn clean javafx:run
 ```
 
-No API key configuration is required.
+The application starts without any AI API configuration.
 
-## Flashcard JSON
+## JSON examples
+
+### Flashcards
 
 ```json
 {
@@ -37,7 +106,7 @@ No API key configuration is required.
 }
 ```
 
-## Quiz JSON
+### Quiz
 
 ```json
 {
@@ -57,14 +126,39 @@ No API key configuration is required.
 }
 ```
 
-The topic must already exist under the selected subject. Importing a JSON file never writes to the database until the user confirms the preview.
+## Milestone 4B-2 test checklist
 
-## Validation
+- [ ] Application starts with no AI API key or configuration.
+- [ ] API Demo successful response is displayed.
+- [ ] API/network failure produces a concise error/status and leaves the rest of the app usable.
+- [ ] HTTP error is handled without a stack trace in the UI.
+- [ ] Invalid/empty/unexpected API response is handled.
+- [ ] API request keeps the JavaFX UI responsive.
+- [ ] API Cancel button stops/cancels the JavaFX task when applicable.
+- [ ] Valid flashcard JSON imports correctly.
+- [ ] Valid quiz JSON imports correctly.
+- [ ] Larger JSON import processing occurs in a background task.
+- [ ] Import buttons are disabled during processing and restored afterward.
+- [ ] Invalid JSON does not change the database.
+- [ ] Preview still supports selection and cancellation.
+- [ ] Only confirmed/selected imported items are persisted.
+- [ ] Existing manual flashcard functionality still works.
+- [ ] Existing manual quiz functionality still works.
+- [ ] Existing Milestone 1–4A functionality remains available.
 
-Flashcards require a topic, a non-empty `flashcards` array, and non-empty question/answer values.
+## Project structure additions
 
-Quiz imports require a topic, a non-empty `questions` array, exactly four non-empty distinct options, and a `correctAnswer` that matches one option or is `A`, `B`, `C`, or `D`.
+```text
+src/main/java/com/revisionassistant/
+├── controller/
+│   ├── FlashcardController.java      # JSON import Task orchestration
+│   ├── QuizController.java           # JSON import Task orchestration
+│   └── StudyToolsController.java     # API demo Task orchestration
+├── dto/
+│   └── ApiDemoResponseDTO.java       # Public API response DTO
+└── service/
+    ├── ApiDemoException.java         # User-facing API failure type
+    └── ApiDemoService.java           # HTTP + Jackson API processing
+```
 
-## Scope
-
-This milestone intentionally does not implement in-app AI generation, concurrency, or the later API demonstration.
+No database schema changes are introduced by Milestone 4B-2.

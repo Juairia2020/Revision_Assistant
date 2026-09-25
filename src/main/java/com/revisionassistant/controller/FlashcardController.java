@@ -24,6 +24,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -33,8 +34,10 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.concurrent.Task;
 import javafx.util.StringConverter;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
@@ -92,6 +95,13 @@ public class FlashcardController {
     private final TopicService topicService = new TopicService();
     private final FlashcardService flashcardService = new FlashcardService();
     private final JsonImportService jsonImportService = new JsonImportService();
+
+    @FXML
+    private javafx.scene.control.Button importJsonButton;
+    @FXML
+    private ProgressIndicator importProgressIndicator;
+    @FXML
+    private Label importStatusLabel;
 
     private final ObservableList<Subject> subjects = FXCollections.observableArrayList();
     private final ObservableList<Flashcard> flashcards = FXCollections.observableArrayList();
@@ -258,43 +268,81 @@ public class FlashcardController {
             return;
         }
 
-        FlashcardImportDTO document;
-        try {
-            document = jsonImportService.readFlashcards(file);
-        } catch (JsonImportException e) {
-            showAlert(Alert.AlertType.ERROR, "Invalid flashcard JSON", e.getMessage());
-            return;
-        }
+        importJsonButton.setDisable(true);
+        importProgressIndicator.setVisible(true);
+        importStatusLabel.setText("Reading and validating JSON…");
 
-        Topic topic;
-        try {
-            topic = resolveImportedTopic(subject, document.getTopic());
-        } catch (IllegalArgumentException | SQLException e) {
-            showAlert(Alert.AlertType.ERROR, "Invalid topic", e.getMessage());
-            return;
-        }
-
-        List<ImportedFlashcardDTO> accepted = showImportedFlashcardsDialog(document.getFlashcards());
-        if (accepted == null || accepted.isEmpty()) {
-            return;
-        }
-
-        int saved = 0;
-        for (ImportedFlashcardDTO card : accepted) {
-            try {
-                flashcardService.addFlashcard(subject.getId(), topic.getId(),
-                        card.getQuestion(), card.getAnswer());
-                saved++;
-            } catch (IllegalArgumentException | SQLException e) {
-                showAlert(Alert.AlertType.ERROR, "Could not save imported flashcard", e.getMessage());
-                break;
+        final Task<FlashcardImportDTO> task = new Task<>() {
+            @Override
+            protected FlashcardImportDTO call() throws Exception {
+                if (isCancelled()) {
+                    return null;
+                }
+                return jsonImportService.readFlashcards(file);
             }
-        }
-        refreshFlashcards();
-        if (saved > 0) {
-            showAlert(Alert.AlertType.INFORMATION, "Import complete",
-                    saved + " flashcard(s) were added.");
-        }
+        };
+
+        task.setOnSucceeded(event -> {
+            importJsonButton.setDisable(false);
+            importProgressIndicator.setVisible(false);
+            importStatusLabel.setText("");
+
+            FlashcardImportDTO document = task.getValue();
+            if (document == null) {
+                return;
+            }
+
+            Topic topic;
+            try {
+                topic = resolveImportedTopic(subject, document.getTopic());
+            } catch (IllegalArgumentException | SQLException e) {
+                showAlert(Alert.AlertType.ERROR, "Invalid topic", e.getMessage());
+                return;
+            }
+
+            List<ImportedFlashcardDTO> accepted = showImportedFlashcardsDialog(document.getFlashcards());
+            if (accepted == null || accepted.isEmpty()) {
+                return;
+            }
+
+            int saved = 0;
+            for (ImportedFlashcardDTO card : accepted) {
+                try {
+                    flashcardService.addFlashcard(subject.getId(), topic.getId(),
+                            card.getQuestion(), card.getAnswer());
+                    saved++;
+                } catch (IllegalArgumentException | SQLException e) {
+                    showAlert(Alert.AlertType.ERROR, "Could not save imported flashcard", e.getMessage());
+                    break;
+                }
+            }
+            refreshFlashcards();
+            if (saved > 0) {
+                showAlert(Alert.AlertType.INFORMATION, "Import complete",
+                        saved + " flashcard(s) were added.");
+            }
+        });
+
+        task.setOnFailed(event -> {
+            importJsonButton.setDisable(false);
+            importProgressIndicator.setVisible(false);
+            importStatusLabel.setText("");
+            Throwable error = task.getException();
+            String message = error instanceof JsonImportException
+                    ? error.getMessage()
+                    : "Could not process the JSON file.";
+            showAlert(Alert.AlertType.ERROR, "Invalid flashcard JSON", message);
+        });
+
+        task.setOnCancelled(event -> {
+            importJsonButton.setDisable(false);
+            importProgressIndicator.setVisible(false);
+            importStatusLabel.setText("");
+        });
+
+        Thread worker = new Thread(task, "flashcard-json-import");
+        worker.setDaemon(true);
+        worker.start();
     }
 
     @FXML

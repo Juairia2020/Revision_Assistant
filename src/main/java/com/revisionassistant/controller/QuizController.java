@@ -24,6 +24,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -33,6 +34,7 @@ import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.concurrent.Task;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
@@ -114,6 +116,13 @@ public class QuizController {
     private final TopicService topicService = new TopicService();
     private final QuizService quizService = new QuizService();
     private final JsonImportService jsonImportService = new JsonImportService();
+
+    @FXML
+    private Button importJsonButton;
+    @FXML
+    private ProgressIndicator importProgressIndicator;
+    @FXML
+    private Label importStatusLabel;
 
     private final ObservableList<Subject> subjects = FXCollections.observableArrayList();
     private final ObservableList<QuizQuestion> questions = FXCollections.observableArrayList();
@@ -252,46 +261,84 @@ public class QuizController {
             return;
         }
 
-        QuizImportDTO document;
-        try {
-            document = jsonImportService.readQuiz(file);
-        } catch (JsonImportException e) {
-            showAlert(Alert.AlertType.ERROR, "Invalid quiz JSON", e.getMessage());
-            return;
-        }
+        importJsonButton.setDisable(true);
+        importProgressIndicator.setVisible(true);
+        importStatusLabel.setText("Reading and validating JSON…");
 
-        Topic topic;
-        try {
-            topic = resolveImportedTopic(subject, document.getTopic());
-        } catch (IllegalArgumentException | SQLException e) {
-            showAlert(Alert.AlertType.ERROR, "Invalid topic", e.getMessage());
-            return;
-        }
-
-        List<ImportedQuizQuestionDTO> accepted =
-                showImportedQuestionsDialog(document.getQuestions());
-        if (accepted == null || accepted.isEmpty()) {
-            return;
-        }
-
-        int saved = 0;
-        for (ImportedQuizQuestionDTO question : accepted) {
-            try {
-                quizService.addQuestion(subject.getId(), topic.getId(),
-                        question.getQuestion(), question.getOptionA(), question.getOptionB(),
-                        question.getOptionC(), question.getOptionD(),
-                        QuizOption.fromString(question.getCorrectOptionLetter()));
-                saved++;
-            } catch (IllegalArgumentException | SQLException e) {
-                showAlert(Alert.AlertType.ERROR, "Could not save imported question", e.getMessage());
-                break;
+        final Task<QuizImportDTO> task = new Task<>() {
+            @Override
+            protected QuizImportDTO call() throws Exception {
+                if (isCancelled()) {
+                    return null;
+                }
+                return jsonImportService.readQuiz(file);
             }
-        }
-        refreshQuestions();
-        if (saved > 0) {
-            showAlert(Alert.AlertType.INFORMATION, "Import complete",
-                    saved + " question(s) were added.");
-        }
+        };
+
+        task.setOnSucceeded(event -> {
+            importJsonButton.setDisable(false);
+            importProgressIndicator.setVisible(false);
+            importStatusLabel.setText("");
+
+            QuizImportDTO document = task.getValue();
+            if (document == null) {
+                return;
+            }
+
+            Topic topic;
+            try {
+                topic = resolveImportedTopic(subject, document.getTopic());
+            } catch (IllegalArgumentException | SQLException e) {
+                showAlert(Alert.AlertType.ERROR, "Invalid topic", e.getMessage());
+                return;
+            }
+
+            List<ImportedQuizQuestionDTO> accepted =
+                    showImportedQuestionsDialog(document.getQuestions());
+            if (accepted == null || accepted.isEmpty()) {
+                return;
+            }
+
+            int saved = 0;
+            for (ImportedQuizQuestionDTO question : accepted) {
+                try {
+                    quizService.addQuestion(subject.getId(), topic.getId(),
+                            question.getQuestion(), question.getOptionA(), question.getOptionB(),
+                            question.getOptionC(), question.getOptionD(),
+                            QuizOption.fromString(question.getCorrectOptionLetter()));
+                    saved++;
+                } catch (IllegalArgumentException | SQLException e) {
+                    showAlert(Alert.AlertType.ERROR, "Could not save imported question", e.getMessage());
+                    break;
+                }
+            }
+            refreshQuestions();
+            if (saved > 0) {
+                showAlert(Alert.AlertType.INFORMATION, "Import complete",
+                        saved + " question(s) were added.");
+            }
+        });
+
+        task.setOnFailed(event -> {
+            importJsonButton.setDisable(false);
+            importProgressIndicator.setVisible(false);
+            importStatusLabel.setText("");
+            Throwable error = task.getException();
+            String message = error instanceof JsonImportException
+                    ? error.getMessage()
+                    : "Could not process the JSON file.";
+            showAlert(Alert.AlertType.ERROR, "Invalid quiz JSON", message);
+        });
+
+        task.setOnCancelled(event -> {
+            importJsonButton.setDisable(false);
+            importProgressIndicator.setVisible(false);
+            importStatusLabel.setText("");
+        });
+
+        Thread worker = new Thread(task, "quiz-json-import");
+        worker.setDaemon(true);
+        worker.start();
     }
 
     @FXML
