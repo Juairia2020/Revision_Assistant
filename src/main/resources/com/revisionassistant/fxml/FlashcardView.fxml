@@ -7,14 +7,13 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.Separator?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.control.ScrollPane?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.revisionassistant.controller.FlashcardController">
@@ -68,45 +67,39 @@
         </VBox>
     </top>
     <center>
-        <GridPane hgap="16" BorderPane.alignment="CENTER">
-            <columnConstraints>
-                <ColumnConstraints percentWidth="62"/>
-                <ColumnConstraints percentWidth="38"/>
-            </columnConstraints>
-            <padding>
-                <Insets top="0" right="16" bottom="16" left="16"/>
-            </padding>
-            <children>
-                <TableView fx:id="flashcardsTable" GridPane.columnIndex="0">
-                    <columns>
-                        <TableColumn fx:id="frontColumn" text="Front" prefWidth="220"/>
-                        <TableColumn fx:id="subjectColumn" text="Subject" prefWidth="110"/>
-                        <TableColumn fx:id="topicColumn" text="Topic" prefWidth="110"/>
-                        <TableColumn fx:id="difficultColumn" text="Difficult" prefWidth="70"/>
-                        <TableColumn fx:id="statusColumn" text="Status" prefWidth="100"/>
-                    </columns>
-                </TableView>
-
-                <VBox spacing="10" styleClass="dashboard-section" GridPane.columnIndex="1">
+        <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" styleClass="dashboard-scroll">
+            <content>
+                <VBox spacing="18" styleClass="page-content">
                     <children>
-                        <Label text="Study" styleClass="section-title"/>
-                        <VBox spacing="8" styleClass="dashboard-row">
+                        <VBox spacing="10" styleClass="study-card-shell">
                             <children>
-                                <Label fx:id="studyFrontLabel" wrapText="true" styleClass="row-title"/>
-                                <Label fx:id="studyBackLabel" wrapText="true" styleClass="row-meta"/>
+                                <HBox alignment="CENTER_LEFT" spacing="10">
+                                    <Label text="Study Card" styleClass="section-title" HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="studyPositionLabel" styleClass="counter-pill"/>
+                                </HBox>
+                                <VBox spacing="10" styleClass="flashcard-stage">
+                                    <children>
+                                        <Label fx:id="studyFrontLabel" wrapText="true" styleClass="flashcard-question"/>
+                                        <Label fx:id="studyBackLabel" wrapText="true" styleClass="flashcard-answer"/>
+                                    </children>
+                                </VBox>
+                                <HBox spacing="10" alignment="CENTER">
+                                    <Button text="Previous" onAction="#handlePreviousCard" styleClass="secondary-button"/>
+                                    <Button text="Show / Hide Answer" onAction="#handleShowAnswer" styleClass="primary-button"/>
+                                    <Button text="Next" onAction="#handleNextCard" styleClass="secondary-button"/>
+                                </HBox>
                             </children>
                         </VBox>
-                        <Label fx:id="studyPositionLabel" styleClass="row-meta"/>
-                        <HBox spacing="8" alignment="CENTER_LEFT">
-                            <children>
-                                <Button text="Previous" onAction="#handlePreviousCard" styleClass="secondary-button"/>
-                                <Button text="Show / Hide Answer" onAction="#handleShowAnswer" styleClass="primary-button"/>
-                                <Button text="Next" onAction="#handleNextCard" styleClass="secondary-button"/>
-                            </children>
+
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Label text="Your Card Library" styleClass="section-title" HBox.hgrow="ALWAYS"/>
+                            <Label text="Click a card to edit or study" styleClass="row-meta"/>
                         </HBox>
+                        <FlowPane fx:id="cardsPane" hgap="14" vgap="14" prefWrapLength="760" styleClass="card-library"/>
                     </children>
+                    <padding><Insets top="0" right="16" bottom="24" left="16"/></padding>
                 </VBox>
-            </children>
-        </GridPane>
+            </content>
+        </ScrollPane>
     </center>
 </BorderPane>

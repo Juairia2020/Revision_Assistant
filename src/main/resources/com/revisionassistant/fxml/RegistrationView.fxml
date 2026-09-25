@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.revisionassistant.controller.RegistrationController"
+           styleClass="auth-shell">
+    <children>
+        <VBox maxWidth="460" spacing="17" styleClass="auth-card">
+            <padding>
+                <Insets top="30" right="38" bottom="30" left="38"/>
+            </padding>
+            <children>
+                <HBox spacing="12" alignment="CENTER_LEFT">
+                    <Label text="RA" styleClass="auth-brand-mark"/>
+                    <VBox spacing="2">
+                        <Label text="Revision Assistant" styleClass="auth-brand-title"/>
+                        <Label text="A simple local study account" styleClass="auth-brand-subtitle"/>
+                    </VBox>
+                </HBox>
+
+                <VBox spacing="4">
+                    <Label text="Create your account" styleClass="auth-title"/>
+                    <Label text="Your account stays on this computer." styleClass="auth-subtitle"/>
+                </VBox>
+
+                <VBox spacing="7">
+                    <Label text="Name" styleClass="form-label"/>
+                    <TextField fx:id="nameField" promptText="Your name"/>
+                </VBox>
+
+                <VBox spacing="7">
+                    <Label text="Email" styleClass="form-label"/>
+                    <TextField fx:id="emailField" promptText="you@example.com"/>
+                </VBox>
+
+                <VBox spacing="7">
+                    <Label text="Password" styleClass="form-label"/>
+                    <PasswordField fx:id="passwordField" promptText="At least 8 characters"/>
+                </VBox>
+
+                <VBox spacing="7">
+                    <Label text="Confirm password" styleClass="form-label"/>
+                    <PasswordField fx:id="confirmPasswordField" promptText="Re-enter your password"/>
+                </VBox>
+
+                <Label fx:id="messageLabel" wrapText="true" minHeight="18" styleClass="form-message"/>
+
+                <Button text="Create account" maxWidth="Infinity" styleClass="primary-button auth-submit"
+                        onAction="#handleRegister"/>
+
+                <HBox alignment="CENTER" spacing="4">
+                    <Label text="Already have an account?" styleClass="form-secondary-text"/>
+                    <Button text="Back to login" styleClass="link-button" onAction="#handleBackToLogin"/>
+                </HBox>
+            </children>
+        </VBox>
+    </children>
+</StackPane>

@@ -3,6 +3,7 @@ package com.revisionassistant.database;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.ResultSet;
 import java.sql.Statement;
 
 /**
@@ -41,6 +42,7 @@ public final class DatabaseManager {
         String createSubjectsTable =
                 "CREATE TABLE IF NOT EXISTS subjects (" +
                 "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    user_id INTEGER," +
                 "    name TEXT NOT NULL," +
                 "    color TEXT" +
                 ")";
@@ -48,6 +50,7 @@ public final class DatabaseManager {
         String createTopicsTable =
                 "CREATE TABLE IF NOT EXISTS topics (" +
                 "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    user_id INTEGER," +
                 "    subject_id INTEGER NOT NULL," +
                 "    name TEXT NOT NULL," +
                 "    completed INTEGER NOT NULL DEFAULT 0," +
@@ -59,6 +62,7 @@ public final class DatabaseManager {
         String createTasksTable =
                 "CREATE TABLE IF NOT EXISTS tasks (" +
                 "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    user_id INTEGER," +
                 "    subject_id INTEGER NOT NULL," +
                 "    topic_id INTEGER," +
                 "    title TEXT NOT NULL," +
@@ -73,6 +77,7 @@ public final class DatabaseManager {
         String createExamsTable =
                 "CREATE TABLE IF NOT EXISTS exams (" +
                 "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    user_id INTEGER," +
                 "    subject_id INTEGER NOT NULL," +
                 "    title TEXT NOT NULL," +
                 "    exam_date TEXT NOT NULL," +
@@ -83,6 +88,7 @@ public final class DatabaseManager {
         String createStudySessionsTable =
                 "CREATE TABLE IF NOT EXISTS study_sessions (" +
                 "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    user_id INTEGER," +
                 "    subject_id INTEGER NOT NULL," +
                 "    topic_id INTEGER," +
                 "    session_date TEXT NOT NULL," +
@@ -97,6 +103,7 @@ public final class DatabaseManager {
         String createFlashcardsTable =
                 "CREATE TABLE IF NOT EXISTS flashcards (" +
                 "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    user_id INTEGER," +
                 "    subject_id INTEGER NOT NULL," +
                 "    topic_id INTEGER," +
                 "    front TEXT NOT NULL," +
@@ -110,6 +117,7 @@ public final class DatabaseManager {
         String createQuizQuestionsTable =
                 "CREATE TABLE IF NOT EXISTS quiz_questions (" +
                 "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    user_id INTEGER," +
                 "    subject_id INTEGER NOT NULL," +
                 "    topic_id INTEGER," +
                 "    question_text TEXT NOT NULL," +
@@ -125,6 +133,7 @@ public final class DatabaseManager {
         String createQuizAttemptsTable =
                 "CREATE TABLE IF NOT EXISTS quiz_attempts (" +
                 "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    user_id INTEGER," +
                 "    subject_id INTEGER NOT NULL," +
                 "    topic_id INTEGER," +
                 "    attempt_date TEXT NOT NULL," +
@@ -138,6 +147,7 @@ public final class DatabaseManager {
         String createQuizAttemptAnswersTable =
                 "CREATE TABLE IF NOT EXISTS quiz_attempt_answers (" +
                 "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    user_id INTEGER," +
                 "    attempt_id INTEGER NOT NULL," +
                 "    question_id INTEGER NOT NULL," +
                 "    selected_option TEXT NOT NULL," +
@@ -151,12 +161,22 @@ public final class DatabaseManager {
         String createTopicDependenciesTable =
                 "CREATE TABLE IF NOT EXISTS topic_dependencies (" +
                 "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    user_id INTEGER," +
                 "    topic_id INTEGER NOT NULL," +
                 "    prerequisite_id INTEGER NOT NULL," +
                 "    FOREIGN KEY(topic_id) REFERENCES topics(id)," +
                 "    FOREIGN KEY(prerequisite_id) REFERENCES topics(id)," +
                 "    UNIQUE(topic_id, prerequisite_id)" +
                 ")";
+
+        String createUsersTable =
+                "CREATE TABLE IF NOT EXISTS users (" +
+                "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    name TEXT NOT NULL," +
+                "    email TEXT NOT NULL COLLATE NOCASE UNIQUE," +
+                "    password_hash TEXT NOT NULL," +
+                "    onboarding_completed INTEGER NOT NULL DEFAULT 0" +
+                ");";
 
         try (Connection connection = getConnection();
              Statement statement = connection.createStatement()) {
@@ -170,6 +190,61 @@ public final class DatabaseManager {
             statement.execute(createQuizAttemptsTable);
             statement.execute(createQuizAttemptAnswersTable);
             statement.execute(createTopicDependenciesTable);
+            statement.execute(createUsersTable);
+            migrateUserOnboardingState(statement);
+            migrateStudyDataOwnership(statement);
+        }
+    }
+
+    private static void migrateStudyDataOwnership(Statement statement) throws SQLException {
+        String[] tables = {
+                "subjects", "topics", "tasks", "exams", "study_sessions",
+                "flashcards", "quiz_questions", "quiz_attempts",
+                "quiz_attempt_answers", "topic_dependencies"
+        };
+        for (String table : tables) {
+            boolean hasColumn = false;
+            try (ResultSet columns = statement.executeQuery("PRAGMA table_info(" + table + ")")) {
+                while (columns.next()) {
+                    if ("user_id".equalsIgnoreCase(columns.getString("name"))) {
+                        hasColumn = true;
+                        break;
+                    }
+                }
+            }
+            if (!hasColumn) {
+                statement.execute("ALTER TABLE " + table + " ADD COLUMN user_id INTEGER");
+            }
+        }
+
+        // Data created before account support belongs to the original account.
+        // If an account already exists, assign all unowned legacy rows to the
+        // oldest account. If no account exists yet, UserService performs the
+        // same claim immediately after the first registration.
+        try (ResultSet users = statement.executeQuery("SELECT id FROM users ORDER BY id LIMIT 1")) {
+            if (users.next()) {
+                int firstUserId = users.getInt(1);
+                for (String table : tables) {
+                    statement.executeUpdate("UPDATE " + table + " SET user_id = " + firstUserId + " WHERE user_id IS NULL");
+                }
+            }
+        }
+    }
+
+    private static void migrateUserOnboardingState(Statement statement) throws SQLException {
+        // Existing Milestone 5A-2 users predate onboarding. Mark them complete
+        // so the new first-launch tour is only shown to newly registered users.
+        try (var columns = statement.executeQuery("PRAGMA table_info(users)")) {
+            boolean hasColumn = false;
+            while (columns.next()) {
+                if ("onboarding_completed".equalsIgnoreCase(columns.getString("name"))) {
+                    hasColumn = true;
+                    break;
+                }
+            }
+            if (!hasColumn) {
+                statement.execute("ALTER TABLE users ADD COLUMN onboarding_completed INTEGER NOT NULL DEFAULT 1");
+            }
         }
     }
 }

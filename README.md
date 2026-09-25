@@ -1,4 +1,50 @@
-# Revision Assistant — Milestone 4B-3
+# Revision Assistant — Milestone 5B-1
+
+Milestone 5B-1 redesigns the Dashboard into the visual study overview while preserving the completed Milestone 5A-3 architecture, account scoping, feature tour, JSON import, API demonstration, concurrency, and existing CRUD functionality.
+
+## 5B-1 Dashboard implementation
+
+The dashboard now uses existing services and data to provide:
+
+- personalized morning/afternoon/evening greeting
+- overall progress calculated from completed topics
+- remaining revision tasks
+- study time for the current seven-day period
+- upcoming exam count
+- completed topic count
+- circular overall-progress visualization
+- upcoming exam cards with preparation calculated from the exam subject's completed topics
+- seven-day study activity chart from existing `StudySession` records
+- subject progress bars based on completed topics
+- Continue Studying action using existing tasks/topics/exams
+- quick navigation actions for subjects, planner, flashcards, quiz, and exams
+- empty states for missing subjects, exams, and study sessions
+- short fade/progress animations that do not introduce a new background execution system
+
+No database schema, DAO, JSON, API, algorithm, or concurrency redesign was added for the dashboard. The existing service layer remains the source of application data.
+
+### Automatic progress rules
+
+- **Overall progress:** completed topics ÷ all topics. If there are no topics, progress is 0%.
+- **Subject progress:** completed topics for that subject ÷ total topics for that subject.
+- **Exam preparation:** completed topics for the exam's subject ÷ total topics for that subject. The existing manual `Exam.progress` value is not used to display dashboard preparation.
+- **Study activity:** study-session duration is grouped by date for the last seven days, including today.
+- **Continue Studying:** uses existing incomplete tasks first, then an incomplete subject/topic area, then the next upcoming exam. No new recommendation algorithm is introduced.
+
+### Milestone 5B-1 testing checklist
+
+- [ ] Start with no subjects and verify the dashboard shows useful empty states.
+- [ ] Add subjects/topics and verify overall and subject progress use real completion data.
+- [ ] Complete a topic and verify the relevant progress changes.
+- [ ] Add a study session and verify the activity chart changes.
+- [ ] Add an exam and verify its preparation follows the subject's topic completion.
+- [ ] Add/complete a task and verify the remaining-task card and Continue Studying action.
+- [ ] Use each dashboard quick action and verify normal navigation.
+- [ ] Resize the application and verify the dashboard remains vertically scrollable.
+- [ ] Replay the Feature Tour and verify Next, Previous, Skip Tour, and Start Studying still work.
+- [ ] Verify login/logout, onboarding, Subjects, Topics, Planner, Exams, Study Sessions, Flashcards, Quiz, Study Tools, JSON import, API demo, algorithms, and concurrency remain intact.
+
+---
 
 Final integration, cleanup, regression-test checklist, and viva documentation for the Revision Assistant project.
 
@@ -296,3 +342,158 @@ No existing CRUD, study, planner, import, preview, or SQLite functionality was r
 ## 11. Verification note
 
 The project was reviewed statically and the source/resource references were checked during Milestone 4B-3 cleanup. The supplied build environment used for this review has JDK 21 and does not have Maven installed, so a full Maven/JDK 26 compile and live JavaFX regression run could not be executed here. The project remains configured for JDK 26, and the final checklist above should be run on a machine with JDK 26 and Maven before submission.
+
+## Milestone 5A-1 — Visual Design System & Application Shell
+
+Milestone 5A-1 redesigns only the JavaFX presentation shell around the existing application.
+The SQLite database, DAOs, services, algorithms, JSON/Jackson import flow, API demonstration,
+and concurrency implementation are preserved.
+
+### Visual design system
+
+The shared `style.css` now provides reusable design tokens and styles for:
+
+- application background and surfaces
+- sidebar/navigation and active states
+- primary, secondary, danger, success, warning, and muted text
+- cards, section headers, badges, empty states, inputs, tables, and progress indicators
+- hover and focus states
+
+The visual language uses a restrained green/teal accent, warm neutral surfaces, clear typography,
+subtle borders, and limited corner rounding. It intentionally avoids a large icon dependency.
+Navigation symbols are lightweight Unicode characters.
+
+### Application shell
+
+`MainView.fxml` now provides a persistent shell with:
+
+- branded sidebar
+- workspace and practice navigation groups
+- active navigation state
+- top page title/subtitle area
+- local application/profile placeholder (not an account system)
+- responsive center content area
+
+The existing screens remain the navigated content. No new backend feature is introduced.
+
+### Navigation transition
+
+`MainController` keeps the existing FXML-to-view navigation and adds one reusable 180 ms fade
+when the central view changes. The transition is UI-only and does not create a background thread.
+
+### Milestone 5A-1 verification
+
+- All FXML files parse as well-formed XML.
+- Every view path used by `MainController` exists.
+- Existing navigation handlers remain present.
+- No DAO, service, algorithm, model, database, JSON, API, or concurrency source files were changed.
+- The project remains configured for JDK 26.
+
+A live JavaFX/Maven build should still be run on the submission machine with JDK 26 because the
+available build environment used for static verification does not provide Maven/JDK 26.
+
+## Milestone 5A-2 — Local Authentication
+
+Revision Assistant now starts at a local login screen. New users can create an account and are taken into the existing application shell after successful registration.
+
+### Authentication architecture
+
+```text
+LoginView / RegistrationView
+        |
+        v
+LoginController / RegistrationController
+        |
+        v
+UserService
+        |
+        v
+UserDAO
+        |
+        v
+DatabaseManager
+        |
+        v
+SQLite users table
+```
+
+The authenticated identity is held by the application-level `CurrentUser` session:
+
+```text
+UserService
+    -> CurrentUser.set(user)
+    -> MainController reads CurrentUser
+    -> Log out calls CurrentUser.clear()
+```
+
+Controllers do not execute SQL and do not implement password hashing themselves.
+
+### Users table
+
+The database initializer adds the following table with `CREATE TABLE IF NOT EXISTS`:
+
+```sql
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL COLLATE NOCASE UNIQUE,
+    password_hash TEXT NOT NULL
+);
+```
+
+This is an additive migration. Existing subjects, topics, tasks, exams, study sessions, flashcards, quiz data, and dependency data are not deleted or changed.
+
+### Password handling
+
+Passwords are hashed with the standard JDK `PBKDF2WithHmacSHA256` implementation. Each password receives a random 16-byte salt and is derived with 210,000 iterations and a 256-bit key. The application stores only the resulting password representation, never the original password.
+
+For a viva:
+
+- **Hashing:** transforms a password into a one-way password representation.
+- **Salt:** random data stored with the hash so identical passwords do not produce identical stored values.
+- **PBKDF2:** a standard password-based key derivation algorithm designed to make password guessing more expensive.
+- **Verification:** the entered password is derived using the stored parameters and compared with the stored derived value.
+
+### Session behaviour
+
+`CurrentUser` is intentionally in memory only. It stores ID, name, and email for the current session and does not retain the password hash. There is no "remember me" feature. Closing the application therefore requires login again.
+
+### Authentication validation
+
+Registration checks:
+
+- required name
+- required email
+- basic email format
+- password length of at least 8 characters
+- matching confirmation password
+- duplicate email
+
+Login checks:
+
+- required email
+- required password
+- correct stored password representation
+- database failures with a user-friendly message
+
+### 5A-2 regression intent
+
+The authentication layer does not associate existing study records with users. This is deliberate for this milestone: existing Milestone 1–4 data is preserved without a large schema migration. User-specific data ownership can be considered in a later milestone if required.
+
+## Milestone 5A-3 — First-Launch Feature Tour
+
+Milestone 5A-3 adds a reusable first-launch onboarding tour without changing the study backend. New registrations open the existing main shell with a nine-step overlay explaining Dashboard, Subjects & Topics, Study Planner, Flashcards, Quiz, Exams, and the existing AI/JSON import workflow. The overlay supports Previous, Next, Skip Tour, and Start Studying and shows `Step N of 9`.
+
+Onboarding completion is stored in the existing `users` table through a small `onboarding_completed` column. The migration treats users created before this milestone as already onboarded, so existing users are not interrupted by a first-launch tour. The same tour can be replayed later using **Take Feature Tour** in the sidebar.
+
+No new backend feature, external dependency, API, JSON workflow, or study functionality was introduced.
+
+### Milestone 5A-3 correction: first-launch tour and per-account study data
+
+The 5A-3 correction pass makes the account boundary real for the local desktop database. Study tables now store a `user_id`, and DAO operations are scoped to the currently authenticated user. Existing legacy study records are preserved and assigned to the original/oldest account; when a legacy database has no users yet, the first newly registered account claims those records. Later accounts start with an empty study workspace.
+
+The first-launch tour is also scheduled after the main scene is attached and its overlay is explicitly raised above the application shell. The sidebar replay action uses the same reusable tour.
+
+
+## UI polish and responsiveness
+The current build uses the refreshed purple/teal visual theme, application icon, responsive shell sizing, and the revised Study Planner task form. Tasks require a subject and title before they can be added; invalid estimated-time input is handled in the form instead of failing silently.

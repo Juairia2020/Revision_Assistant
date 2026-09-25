@@ -8,12 +8,13 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ColorPicker;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
-import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.layout.Region;
+import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
 
 import java.sql.SQLException;
@@ -26,13 +27,7 @@ import java.util.List;
 public class SubjectController {
 
     @FXML
-    private TableView<Subject> subjectsTable;
-    @FXML
-    private TableColumn<Subject, Integer> idColumn;
-    @FXML
-    private TableColumn<Subject, String> nameColumn;
-    @FXML
-    private TableColumn<Subject, String> colorColumn;
+    private ListView<Subject> subjectsList;
 
     @FXML
     private TextField nameField;
@@ -44,17 +39,22 @@ public class SubjectController {
 
     @FXML
     public void initialize() {
-        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-        colorColumn.setCellValueFactory(new PropertyValueFactory<>("color"));
-        colorColumn.setCellFactory(column -> new ColorSwatchCell());
-
-        subjectsTable.setItems(subjects);
-        subjectsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue != null) {
-                nameField.setText(newValue.getName());
-                colorPicker.setValue(hexToColor(newValue.getColor()));
+        subjectsList.setItems(subjects);
+        subjectsList.setCellFactory(list -> new ListCell<>() {
+            @Override protected void updateItem(Subject subject, boolean empty) {
+                super.updateItem(subject, empty);
+                if (empty || subject == null) { setGraphic(null); return; }
+                HBox row = new HBox(14); row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                Region swatch = new Region(); swatch.setPrefSize(14, 44);
+                swatch.setStyle("-fx-background-color: " + subject.getColor() + "; -fx-background-radius: 8;");
+                VBox text = new VBox(3);
+                Label name = new Label(subject.getName()); name.getStyleClass().add("card-title");
+                Label meta = new Label("Subject " + subject.getId() + "  •  " + subject.getColor()); meta.getStyleClass().add("row-meta");
+                text.getChildren().addAll(name, meta); row.getChildren().addAll(swatch, text); setGraphic(row);
             }
+        });
+        subjectsList.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue != null) { nameField.setText(newValue.getName()); colorPicker.setValue(hexToColor(newValue.getColor())); }
         });
 
         colorPicker.setValue(Color.LIGHTBLUE);
@@ -74,7 +74,7 @@ public class SubjectController {
 
     @FXML
     private void handleEdit() {
-        Subject selected = subjectsTable.getSelectionModel().getSelectedItem();
+        Subject selected = subjectsList.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "No subject selected", "Select a subject to edit first.");
             return;
@@ -91,7 +91,7 @@ public class SubjectController {
 
     @FXML
     private void handleDelete() {
-        Subject selected = subjectsTable.getSelectionModel().getSelectedItem();
+        Subject selected = subjectsList.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "No subject selected", "Select a subject to delete first.");
             return;
@@ -127,7 +127,7 @@ public class SubjectController {
     private void clearForm() {
         nameField.clear();
         colorPicker.setValue(Color.LIGHTBLUE);
-        subjectsTable.getSelectionModel().clearSelection();
+        subjectsList.getSelectionModel().clearSelection();
     }
 
     private void showAlert(Alert.AlertType type, String header, String message) {
@@ -154,21 +154,4 @@ public class SubjectController {
         }
     }
 
-    /** Renders the stored hex color as a small colored swatch plus its code. */
-    private static class ColorSwatchCell extends TableCell<Subject, String> {
-        @Override
-        protected void updateItem(String hex, boolean empty) {
-            super.updateItem(hex, empty);
-            if (empty || hex == null) {
-                setText(null);
-                setGraphic(null);
-                return;
-            }
-            setText(hex);
-            Region swatch = new Region();
-            swatch.setPrefSize(14, 14);
-            swatch.setStyle("-fx-background-color: " + hex + "; -fx-background-radius: 3;");
-            setGraphic(swatch);
-        }
-    }
 }

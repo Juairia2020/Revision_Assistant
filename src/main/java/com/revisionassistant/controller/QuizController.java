@@ -26,8 +26,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.RadioButton;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Toggle;
@@ -36,6 +35,7 @@ import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.concurrent.Task;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -78,15 +78,7 @@ public class QuizController {
     private ComboBox<Subject> filterSubjectComboBox;
 
     @FXML
-    private TableView<QuizQuestion> questionsTable;
-    @FXML
-    private TableColumn<QuizQuestion, String> questionColumn;
-    @FXML
-    private TableColumn<QuizQuestion, String> questionSubjectColumn;
-    @FXML
-    private TableColumn<QuizQuestion, String> questionTopicColumn;
-    @FXML
-    private TableColumn<QuizQuestion, String> correctColumn;
+    private FlowPane questionCardsPane;
 
     // ----- Take Quiz tab ------------------------------------------------
 
@@ -102,15 +94,9 @@ public class QuizController {
     private Label quizResultLabel;
 
     @FXML
-    private TableView<QuizAttempt> historyTable;
-    @FXML
-    private TableColumn<QuizAttempt, String> historyDateColumn;
-    @FXML
-    private TableColumn<QuizAttempt, String> historySubjectColumn;
-    @FXML
-    private TableColumn<QuizAttempt, String> historyTopicColumn;
-    @FXML
-    private TableColumn<QuizAttempt, String> historyScoreColumn;
+    private VBox historyBox;
+
+    private QuizQuestion selectedQuestion;
 
     private final SubjectService subjectService = new SubjectService();
     private final TopicService topicService = new TopicService();
@@ -150,36 +136,44 @@ public class QuizController {
         subjectComboBox.setConverter(subjectConverter(null, subjectComboBox));
         subjectComboBox.valueProperty().addListener((obs, oldValue, newValue) ->
                 refreshTopicChoices(subjectComboBox, topicComboBox));
-
         correctOptionComboBox.setItems(FXCollections.observableArrayList(QuizOption.values()));
         correctOptionComboBox.setValue(QuizOption.A);
-
         ObservableList<Subject> filterSubjects = FXCollections.observableArrayList();
         filterSubjects.add(null);
         filterSubjectComboBox.setItems(filterSubjects);
         filterSubjectComboBox.setConverter(subjectConverter("All subjects", filterSubjectComboBox));
         filterSubjectComboBox.setValue(null);
         filterSubjectComboBox.valueProperty().addListener((obs, oldValue, newValue) -> applyQuestionFilter());
+        questionCardsPane.setHgap(14);
+        questionCardsPane.setVgap(14);
+        questionCardsPane.widthProperty().addListener((obs, oldValue, newValue) ->
+                questionCardsPane.setPrefWrapLength(Math.max(420, newValue.doubleValue() - 24)));
+    }
 
-        questionColumn.setCellValueFactory(data -> new SimpleStringProperty(truncate(data.getValue().getQuestionText())));
-        questionSubjectColumn.setCellValueFactory(data -> {
-            Subject subject = subjectsById.get(data.getValue().getSubjectId());
-            return new SimpleStringProperty(subject == null ? "—" : subject.getName());
-        });
-        questionTopicColumn.setCellValueFactory(data -> {
-            Integer topicId = data.getValue().getTopicId();
-            Topic topic = topicId == null ? null : topicsById.get(topicId);
-            return new SimpleStringProperty(topic == null ? "—" : topic.getName());
-        });
-        correctColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getCorrectOption().name()));
+    private void rebuildQuestionCards() {
+        questionCardsPane.getChildren().clear();
+        for (QuizQuestion question : questions) {
+            VBox card = new VBox(8);
+            card.getStyleClass().add("question-library-card");
+            card.setPrefWidth(310);
+            Label title = new Label(truncate(question.getQuestionText()));
+            title.setWrapText(true);
+            title.getStyleClass().add("row-title");
+            Label answer = new Label("Correct: " + question.getCorrectOption().name());
+            answer.getStyleClass().add("badge-success");
+            Subject subject = subjectsById.get(question.getSubjectId());
+            Label meta = new Label(subject == null ? "No subject" : subject.getName());
+            meta.getStyleClass().add("row-meta");
+            card.getChildren().addAll(title, answer, meta);
+            card.setOnMouseClicked(e -> { selectedQuestion = question; populateQuestionForm(question); selectQuestionCard(question); });
+            questionCardsPane.getChildren().add(card);
+        }
+    }
 
-        questionsTable.setItems(questions);
-        questionsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue != null) {
-                populateQuestionForm(newValue);
-            }
-        });
+    private void selectQuestionCard(QuizQuestion question) {
+        for (int i = 0; i < questions.size(); i++) {
+            questionCardsPane.getChildren().get(i).pseudoClassStateChanged(javafx.css.PseudoClass.getPseudoClass("selected"), questions.get(i).equals(question));
+        }
     }
 
     private void setUpQuizTab() {
@@ -187,28 +181,25 @@ public class QuizController {
         quizSubjectComboBox.setConverter(subjectConverter(null, quizSubjectComboBox));
         quizSubjectComboBox.valueProperty().addListener((obs, oldValue, newValue) -> {
             refreshTopicChoices(quizSubjectComboBox, quizTopicComboBox);
-            quizTopicComboBox.getItems().add(0, null);
+            if (!quizTopicComboBox.getItems().contains(null)) quizTopicComboBox.getItems().add(0, null);
         });
-
-        historyDateColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getAttemptDate().toString()));
-        historySubjectColumn.setCellValueFactory(data -> {
-            Subject subject = subjectsById.get(data.getValue().getSubjectId());
-            return new SimpleStringProperty(subject == null ? "—" : subject.getName());
-        });
-        historyTopicColumn.setCellValueFactory(data -> {
-            Integer topicId = data.getValue().getTopicId();
-            Topic topic = topicId == null ? null : topicsById.get(topicId);
-            return new SimpleStringProperty(topic == null ? "—" : topic.getName());
-        });
-        historyScoreColumn.setCellValueFactory(data -> {
-            QuizAttempt attempt = data.getValue();
-            return new SimpleStringProperty(attempt.getCorrectAnswers() + " / " + attempt.getTotalQuestions()
-                    + " (" + attempt.getScorePercent() + "%)");
-        });
-        historyTable.setItems(attempts);
-
         submitQuizButton.setDisable(true);
+    }
+
+    private void rebuildHistoryCards() {
+        historyBox.getChildren().clear();
+        for (QuizAttempt attempt : attempts) {
+            HBox row = new HBox(14);
+            row.getStyleClass().add("history-card");
+            Label score = new Label(attempt.getCorrectAnswers() + "/" + attempt.getTotalQuestions());
+            score.getStyleClass().add("history-score");
+            Label details = new Label(attempt.getAttemptDate() + "  •  " +
+                    (subjectsById.get(attempt.getSubjectId()) == null ? "Subject" : subjectsById.get(attempt.getSubjectId()).getName()) +
+                    "  •  " + attempt.getScorePercent() + "%");
+            details.getStyleClass().add("row-meta");
+            row.getChildren().addAll(score, details);
+            historyBox.getChildren().add(row);
+        }
     }
 
     // ----- Manage Questions handlers ------------------------------------
@@ -256,7 +247,7 @@ public class QuizController {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Import quiz questions from JSON");
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON files", "*.json"));
-        java.io.File file = chooser.showOpenDialog(questionsTable.getScene().getWindow());
+        java.io.File file = chooser.showOpenDialog(questionCardsPane.getScene().getWindow());
         if (file == null) {
             return;
         }
@@ -392,7 +383,7 @@ public class QuizController {
 
     @FXML
     private void handleEditQuestion() {
-        QuizQuestion selected = questionsTable.getSelectionModel().getSelectedItem();
+        QuizQuestion selected = selectedQuestion;
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "No question selected", "Select a question to edit first.");
             return;
@@ -417,7 +408,7 @@ public class QuizController {
 
     @FXML
     private void handleDeleteQuestion() {
-        QuizQuestion selected = questionsTable.getSelectionModel().getSelectedItem();
+        QuizQuestion selected = selectedQuestion;
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "No question selected", "Select a question to delete first.");
             return;
@@ -451,6 +442,7 @@ public class QuizController {
             List<QuizQuestion> filtered = quizService.getFilteredQuestions(
                     subject == null ? null : subject.getId(), null);
             questions.setAll(filtered);
+            rebuildQuestionCards();
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Database error", "Could not load questions: " + e.getMessage());
         }
@@ -492,7 +484,7 @@ public class QuizController {
         int number = 1;
         for (QuizQuestion question : currentQuiz) {
             VBox panel = new VBox(6);
-            panel.getStyleClass().add("dashboard-row");
+            panel.getStyleClass().add("quiz-question-card");
 
             Label questionLabel = new Label(number + ". " + question.getQuestionText());
             questionLabel.getStyleClass().add("row-title");
@@ -558,9 +550,9 @@ public class QuizController {
                 radioButton.setDisable(true);
                 QuizOption option = (QuizOption) radioButton.getUserData();
                 if (option == question.getCorrectOption()) {
-                    radioButton.getStyleClass().add("row-title");
+                    radioButton.getStyleClass().add("quiz-correct-option");
                 } else if (radioButton.equals(selected)) {
-                    radioButton.getStyleClass().add("row-meta-warning");
+                    radioButton.getStyleClass().add("quiz-wrong-option");
                 }
             }
             index++;
@@ -570,6 +562,7 @@ public class QuizController {
     private void refreshHistory() {
         try {
             attempts.setAll(quizService.getRecentAttempts(20));
+            rebuildHistoryCards();
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Database error", "Could not load quiz history: " + e.getMessage());
         }
@@ -646,7 +639,8 @@ public class QuizController {
         optionCField.clear();
         optionDField.clear();
         correctOptionComboBox.setValue(QuizOption.A);
-        questionsTable.getSelectionModel().clearSelection();
+        selectedQuestion = null;
+        questionCardsPane.getChildren().forEach(n -> n.pseudoClassStateChanged(javafx.css.PseudoClass.getPseudoClass("selected"), false));
     }
 
     private String truncate(String text) {

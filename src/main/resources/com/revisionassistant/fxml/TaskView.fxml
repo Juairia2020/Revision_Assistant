@@ -5,78 +5,81 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.Spinner?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.revisionassistant.controller.TaskController">
-    <top>
-        <VBox spacing="10" styleClass="view-header" BorderPane.alignment="CENTER">
-            <padding>
-                <Insets top="16" right="16" bottom="10" left="16"/>
-            </padding>
-            <children>
-                <Label text="Tasks" styleClass="view-title"/>
+<BorderPane xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.revisionassistant.controller.TaskController"
+            styleClass="task-page">
 
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <children>
-                        <ComboBox fx:id="subjectComboBox" promptText="Subject" prefWidth="160"/>
-                        <ComboBox fx:id="topicComboBox" promptText="Topic (optional)" prefWidth="170"/>
-                        <TextField fx:id="titleField" promptText="Task title" prefWidth="200" HBox.hgrow="ALWAYS"/>
-                    </children>
-                </HBox>
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <children>
-                        <Label text="Est. time (min):"/>
-                        <Spinner fx:id="estimatedMinutesSpinner" prefWidth="90"/>
-                        <Label text="Priority:"/>
-                        <ComboBox fx:id="priorityComboBox" prefWidth="110"/>
-                        <Label text="Deadline:"/>
-                        <DatePicker fx:id="deadlinePicker" prefWidth="150"/>
-                    </children>
-                </HBox>
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <children>
-                        <Button text="Add" onAction="#handleAddTask" styleClass="primary-button"/>
+    <top>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+                    styleClass="scroll-pane" prefViewportHeight="250">
+            <content>
+                <VBox spacing="12" styleClass="task-form-card">
+                    <padding>
+                        <Insets top="16" right="16" bottom="16" left="16"/>
+                    </padding>
+
+                    <VBox spacing="3">
+                        <Label text="Plan a study task" styleClass="task-form-title"/>
+                        <Label text="Choose a subject, give the task a clear title, and add optional details."
+                               styleClass="task-form-caption" wrapText="true"/>
+                    </VBox>
+
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <ComboBox fx:id="subjectComboBox" promptText="Subject" prefWidth="170"/>
+                        <ComboBox fx:id="topicComboBox" promptText="Topic (optional)" prefWidth="190"/>
+                        <TextField fx:id="titleField" promptText="Task title" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Time:" styleClass="filter-label"/>
+                        <Spinner fx:id="estimatedMinutesSpinner" prefWidth="100"/>
+                        <Label text="Priority:" styleClass="filter-label"/>
+                        <ComboBox fx:id="priorityComboBox" prefWidth="125"/>
+                        <Label text="Deadline:" styleClass="filter-label"/>
+                        <DatePicker fx:id="deadlinePicker" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Button fx:id="addTaskButton" text="＋ Add task"
+                                onAction="#handleAddTask" styleClass="primary-button"/>
                         <Button text="Update" onAction="#handleEditTask" styleClass="secondary-button"/>
                         <Button text="Delete" onAction="#handleDeleteTask" styleClass="danger-button"/>
-                    </children>
-                </HBox>
+                        <Label fx:id="formStatusLabel" text="" wrapText="true" HBox.hgrow="ALWAYS"/>
+                    </HBox>
 
-                <Separator/>
+                    <Separator/>
 
-                <HBox spacing="10" alignment="CENTER_LEFT" styleClass="filter-bar">
-                    <children>
-                        <Label text="Filter:" styleClass="filter-label"/>
-                        <ComboBox fx:id="filterSubjectComboBox" prefWidth="150"/>
-                        <ComboBox fx:id="filterStatusComboBox" prefWidth="130"/>
-                        <ComboBox fx:id="filterPriorityComboBox" prefWidth="130"/>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Filter" styleClass="filter-label"/>
+                        <ComboBox fx:id="filterSubjectComboBox" prefWidth="155"/>
+                        <ComboBox fx:id="filterStatusComboBox" prefWidth="135"/>
+                        <ComboBox fx:id="filterPriorityComboBox" prefWidth="135"/>
                         <Button text="Clear filters" onAction="#handleClearFilters" styleClass="link-button"/>
-                    </children>
-                </HBox>
-            </children>
-        </VBox>
+                    </HBox>
+                </VBox>
+            </content>
+        </ScrollPane>
     </top>
+
     <center>
-        <TableView fx:id="tasksTable" BorderPane.alignment="CENTER">
-            <columns>
-                <TableColumn fx:id="titleColumn" text="Title" prefWidth="200"/>
-                <TableColumn fx:id="subjectColumn" text="Subject" prefWidth="120"/>
-                <TableColumn fx:id="topicColumn" text="Topic" prefWidth="120"/>
-                <TableColumn fx:id="estimatedColumn" text="Est. Time" prefWidth="90"/>
-                <TableColumn fx:id="priorityColumn" text="Priority" prefWidth="90"/>
-                <TableColumn fx:id="deadlineColumn" text="Deadline" prefWidth="110"/>
-                <TableColumn fx:id="completedColumn" text="Completed" prefWidth="90"/>
-            </columns>
-            <BorderPane.margin>
-                <Insets top="0" right="16" bottom="16" left="16"/>
-            </BorderPane.margin>
-        </TableView>
+        <VBox spacing="8" BorderPane.alignment="CENTER">
+            <padding>
+                <Insets top="12" right="16" bottom="16" left="16"/>
+            </padding>
+            <children>
+                <Label text="Your study tasks" styleClass="section-title"/>
+                <ListView fx:id="tasksList" VBox.vgrow="ALWAYS" styleClass="feature-list"/>
+</children>
+        </VBox>
     </center>
 </BorderPane>
