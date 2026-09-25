@@ -1,8 +1,10 @@
 # Revision Assistant
 
 A JavaFX + SQLite desktop app for planning revision. Milestone 1 covered
-Subjects and Topics; Milestone 2 adds Tasks, Exams, Study Sessions and a
-data-driven Dashboard.
+Subjects and Topics; Milestone 2 added Tasks, Exams, Study Sessions,
+Flashcards, Quizzes and a data-driven Dashboard. Milestone 3 adds a topic
+prerequisite/dependency graph and an algorithm-driven Study Planner, under
+the new "Study Tools" screen.
 
 ## Requirements
 

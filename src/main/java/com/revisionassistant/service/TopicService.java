@@ -7,6 +7,7 @@ import com.revisionassistant.dao.StudySessionDAO;
 import com.revisionassistant.dao.SubjectDAO;
 import com.revisionassistant.dao.TaskDAO;
 import com.revisionassistant.dao.TopicDAO;
+import com.revisionassistant.dao.TopicDependencyDAO;
 import com.revisionassistant.model.Topic;
 
 import java.sql.SQLException;
@@ -26,6 +27,7 @@ public class TopicService {
     private final FlashcardDAO flashcardDAO;
     private final QuizQuestionDAO quizQuestionDAO;
     private final QuizAttemptDAO quizAttemptDAO;
+    private final TopicDependencyDAO topicDependencyDAO;
 
     public TopicService() {
         this.topicDAO = new TopicDAO();
@@ -35,6 +37,7 @@ public class TopicService {
         this.flashcardDAO = new FlashcardDAO();
         this.quizQuestionDAO = new QuizQuestionDAO();
         this.quizAttemptDAO = new QuizAttemptDAO();
+        this.topicDependencyDAO = new TopicDependencyDAO();
     }
 
     public Topic addTopic(int subjectId, String name) throws SQLException {
@@ -48,6 +51,11 @@ public class TopicService {
         return topicDAO.findBySubjectId(subjectId);
     }
 
+    /** Every topic across every subject - used by the dependency graph, which is not scoped to one subject. */
+    public List<Topic> getAllTopics() throws SQLException {
+        return topicDAO.findAll();
+    }
+
     public void updateTopic(Topic topic) throws SQLException {
         validateSubject(topic.getSubjectId());
         validateName(topic.getName());
@@ -59,10 +67,11 @@ public class TopicService {
     }
 
     /**
-     * Deletes a topic only if no task or study session still points
-     * to it. Tasks and sessions can also be logged against a subject
-     * with no specific topic, so this does not block deleting the
-     * subject itself.
+     * Deletes a topic only if no task, study session, flashcard or
+     * quiz data still points to it. Any prerequisite relationships
+     * involving this topic are structural metadata rather than user
+     * content, so they are cleaned up automatically rather than
+     * blocking the delete.
      */
     public void deleteTopic(int topicId) throws SQLException {
         int taskCount = taskDAO.countByTopicId(topicId);
@@ -76,6 +85,7 @@ public class TopicService {
                     "This topic still has tasks, study sessions, flashcards or quiz data linked to it. "
                             + "Remove those first before deleting the topic.");
         }
+        topicDependencyDAO.deleteAllForTopic(topicId);
         topicDAO.delete(topicId);
     }
 

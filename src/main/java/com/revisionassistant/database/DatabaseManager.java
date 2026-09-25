@@ -146,6 +146,18 @@ public final class DatabaseManager {
                 "    FOREIGN KEY(question_id) REFERENCES quiz_questions(id)" +
                 ")";
 
+        // --- Topic dependency graph (Milestone 3) ------------------------
+
+        String createTopicDependenciesTable =
+                "CREATE TABLE IF NOT EXISTS topic_dependencies (" +
+                "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    topic_id INTEGER NOT NULL," +
+                "    prerequisite_id INTEGER NOT NULL," +
+                "    FOREIGN KEY(topic_id) REFERENCES topics(id)," +
+                "    FOREIGN KEY(prerequisite_id) REFERENCES topics(id)," +
+                "    UNIQUE(topic_id, prerequisite_id)" +
+                ")";
+
         try (Connection connection = getConnection();
              Statement statement = connection.createStatement()) {
             statement.execute(createSubjectsTable);
@@ -157,6 +169,7 @@ public final class DatabaseManager {
             statement.execute(createQuizQuestionsTable);
             statement.execute(createQuizAttemptsTable);
             statement.execute(createQuizAttemptAnswersTable);
+            statement.execute(createTopicDependenciesTable);
         }
     }
 }
