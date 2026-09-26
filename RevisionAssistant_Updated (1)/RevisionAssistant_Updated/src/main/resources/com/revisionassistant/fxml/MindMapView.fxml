@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.revisionassistant.controller.MindMapController"
+      styleClass="view-root mindmap-view"
+      spacing="0">
+
+    <VBox spacing="10" styleClass="mindmap-toolbar">
+        <padding><Insets top="14" right="16" bottom="12" left="16"/></padding>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <TextField fx:id="mapNameField" text="New Study Map" promptText="Map name" prefWidth="190"/>
+            <Button text="New" onAction="#handleNewMap" styleClass="secondary-button"/>
+            <Button text="Save" onAction="#handleSaveMap" styleClass="primary-button"/>
+            <Separator orientation="VERTICAL"/>
+            <ComboBox fx:id="savedMapsCombo" promptText="Saved mind maps" prefWidth="210"/>
+            <Button text="Delete Saved" onAction="#handleDeleteSavedMap" styleClass="danger-button"/>
+        </HBox>
+
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <TextField fx:id="rootTopicField" promptText="Root topic for a new map" prefWidth="230"/>
+            <Button text="Add First Topic" onAction="#handleSetRootTopic" styleClass="primary-button"/>
+            <Separator orientation="VERTICAL"/>
+            <Label fx:id="selectedNodeLabel" text="Selected: none" styleClass="badge-accent"/>
+            <Button text="Make Selected Central" onAction="#handleCenterSelected" styleClass="secondary-button"/>
+            <TextField fx:id="newNodeField" promptText="Add a branch to the selected node" prefWidth="250"/>
+            <Button text="+ Add Branch" onAction="#handleAddNode" styleClass="primary-button"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="nodeCountLabel" styleClass="badge-accent"/>
+        </HBox>
+        <Label fx:id="statusLabel"
+               text="Click any node to select it, then add branches to that node. Double-click or use Make Selected Central to center the map on it."
+               styleClass="mindmap-hint" wrapText="true"/>
+    </VBox>
+
+    <StackPane VBox.vgrow="ALWAYS" styleClass="mindmap-workspace">
+        <padding><Insets top="12" right="16" bottom="16" left="16"/></padding>
+        <Pane fx:id="mapPane" styleClass="mindmap-pane">
+            <Canvas fx:id="connectionCanvas" mouseTransparent="true"/>
+            <Label fx:id="emptyStateLabel"
+                   text="No nodes yet. Set a root topic above to begin your study map."
+                   styleClass="mindmap-empty"
+                   wrapText="true" visible="true"/>
+        </Pane>
+    </StackPane>
+</VBox>
