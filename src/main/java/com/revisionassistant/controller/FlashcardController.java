@@ -7,10 +7,15 @@ import com.revisionassistant.model.RevisionStatus;
 import com.revisionassistant.model.Subject;
 import com.revisionassistant.model.Topic;
 import com.revisionassistant.service.JsonImportException;
+import com.revisionassistant.util.DialogStyler;
 import com.revisionassistant.service.JsonImportService;
 import com.revisionassistant.service.FlashcardService;
 import com.revisionassistant.service.SubjectService;
 import com.revisionassistant.service.TopicService;
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -31,13 +36,16 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.transform.Rotate;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.concurrent.Task;
+import javafx.util.Duration;
 import javafx.util.StringConverter;
 
 import java.io.File;
@@ -77,6 +85,24 @@ public class FlashcardController {
     @FXML
     private FlowPane cardsPane;
 
+    // ----- Study Cards tab ----------------------------------------------
+
+    @FXML
+    private ComboBox<Subject> studySubjectComboBox;
+    @FXML
+    private ComboBox<Topic> studyTopicComboBox;
+    @FXML
+    private ComboBox<RevisionStatus> studyStatusComboBox;
+    @FXML
+    private Label studyStatusLabel;
+    @FXML
+    private VBox studyPanel;
+    @FXML
+    private StackPane flipCardStack;
+    @FXML
+    private VBox flipCardFront;
+    @FXML
+    private VBox flipCardBack;
     @FXML
     private Label studyFrontLabel;
     @FXML
@@ -98,11 +124,16 @@ public class FlashcardController {
 
     private final ObservableList<Subject> subjects = FXCollections.observableArrayList();
     private final ObservableList<Flashcard> flashcards = FXCollections.observableArrayList();
+    private final ObservableList<Flashcard> studyCards = FXCollections.observableArrayList();
 
     private final Map<Integer, Subject> subjectsById = new HashMap<>();
     private final Map<Integer, Topic> topicsById = new HashMap<>();
 
-    private int studyIndex = -1;
+    /** Index into {@code flashcards}, for the Manage Cards form/edit selection. */
+    private int selectedIndex = -1;
+
+    /** Index into {@code studyCards} and its flip state, for the Study Cards tab. */
+    private int studyCardIndex = -1;
     private boolean studyShowingBack = false;
 
     @FXML
@@ -110,6 +141,7 @@ public class FlashcardController {
         setUpFormControls();
         setUpFilterControls();
         setUpCardLibrary();
+        setUpStudyControls();
         refreshSubjects();
         refreshFlashcards();
         updateStudyPanel();
@@ -122,6 +154,59 @@ public class FlashcardController {
 
         revisionStatusComboBox.setItems(FXCollections.observableArrayList(RevisionStatus.values()));
         revisionStatusComboBox.setValue(RevisionStatus.NOT_STARTED);
+    }
+
+    private void setUpStudyControls() {
+        studySubjectComboBox.setItems(subjects);
+        studySubjectComboBox.setConverter(subjectConverter(null));
+        studySubjectComboBox.valueProperty().addListener((obs, oldValue, newValue) -> refreshStudyTopicChoices());
+
+        ObservableList<Topic> emptyTopics = FXCollections.observableArrayList();
+        emptyTopics.add(null);
+        studyTopicComboBox.setItems(emptyTopics);
+        studyTopicComboBox.setConverter(new StringConverter<Topic>() {
+            @Override
+            public String toString(Topic topic) {
+                return topic == null ? "All topics" : topic.getName();
+            }
+
+            @Override
+            public Topic fromString(String string) {
+                return studyTopicComboBox.getValue();
+            }
+        });
+
+        ObservableList<RevisionStatus> statusOptions = FXCollections.observableArrayList();
+        statusOptions.add(null);
+        statusOptions.addAll(RevisionStatus.values());
+        studyStatusComboBox.setItems(statusOptions);
+        studyStatusComboBox.setConverter(new StringConverter<RevisionStatus>() {
+            @Override
+            public String toString(RevisionStatus status) {
+                return status == null ? "All statuses" : status.getLabel();
+            }
+
+            @Override
+            public RevisionStatus fromString(String string) {
+                return studyStatusComboBox.getValue();
+            }
+        });
+        studyStatusComboBox.setValue(null);
+    }
+
+    private void refreshStudyTopicChoices() {
+        Subject subject = studySubjectComboBox.getValue();
+        ObservableList<Topic> topics = FXCollections.observableArrayList();
+        topics.add(null);
+        if (subject != null) {
+            try {
+                topics.addAll(topicService.getTopicsForSubject(subject.getId()));
+            } catch (SQLException e) {
+                showAlert(Alert.AlertType.ERROR, "Database error", "Could not load topics: " + e.getMessage());
+            }
+        }
+        studyTopicComboBox.setItems(topics);
+        studyTopicComboBox.setValue(null);
     }
 
     private void setUpFilterControls() {
@@ -207,10 +292,8 @@ public class FlashcardController {
 
     private void selectFlashcard(int index) {
         if (index < 0 || index >= flashcards.size()) return;
-        studyIndex = index;
-        studyShowingBack = false;
+        selectedIndex = index;
         populateForm(flashcards.get(index));
-        updateStudyPanel();
         for (int i = 0; i < cardsPane.getChildren().size(); i++) {
             cardsPane.getChildren().get(i).pseudoClassStateChanged(javafx.css.PseudoClass.getPseudoClass("selected"), i == index);
         }
@@ -439,59 +522,15 @@ public class FlashcardController {
         filterStatusComboBox.setValue(null);
     }
 
-    // ----- Study / browse panel ---------------------------------------
-
-    @FXML
-    private void handleShowAnswer() {
-        if (studyIndex < 0) {
-            return;
-        }
-        studyShowingBack = !studyShowingBack;
-        updateStudyPanel();
-    }
-
-    @FXML
-    private void handlePreviousCard() {
-        if (flashcards.isEmpty()) {
-            return;
-        }
-        studyIndex = studyIndex <= 0 ? flashcards.size() - 1 : studyIndex - 1;
-        studyShowingBack = false;
-        selectFlashcard(studyIndex);
-    }
-
-    @FXML
-    private void handleNextCard() {
-        if (flashcards.isEmpty()) {
-            return;
-        }
-        studyIndex = studyIndex >= flashcards.size() - 1 ? 0 : studyIndex + 1;
-        studyShowingBack = false;
-        selectFlashcard(studyIndex);
-    }
+    // ----- Manage Cards: selection for the edit form -----------------------
 
     private Flashcard getSelectedFlashcard() {
-        return studyIndex >= 0 && studyIndex < flashcards.size() ? flashcards.get(studyIndex) : null;
+        return selectedIndex >= 0 && selectedIndex < flashcards.size() ? flashcards.get(selectedIndex) : null;
     }
 
     private void clearSelectedFlashcard() {
-        studyIndex = -1;
-        studyShowingBack = false;
+        selectedIndex = -1;
         for (var node : cardsPane.getChildren()) node.pseudoClassStateChanged(javafx.css.PseudoClass.getPseudoClass("selected"), false);
-        updateStudyPanel();
-    }
-
-    private void updateStudyPanel() {
-        if (flashcards.isEmpty() || studyIndex < 0 || studyIndex >= flashcards.size()) {
-            studyFrontLabel.setText("Add or select a flashcard to start studying.");
-            studyBackLabel.setText("");
-            studyPositionLabel.setText("");
-            return;
-        }
-        Flashcard card = flashcards.get(studyIndex);
-        studyFrontLabel.setText(card.getFront());
-        studyBackLabel.setText(studyShowingBack ? card.getBack() : "");
-        studyPositionLabel.setText((studyIndex + 1) + " of " + flashcards.size());
     }
 
     private void applyFilters() {
@@ -503,13 +542,133 @@ public class FlashcardController {
             List<Flashcard> filtered = flashcardService.getFilteredFlashcards(
                     subject == null ? null : subject.getId(), difficult, status);
             flashcards.setAll(filtered);
-            studyIndex = flashcards.isEmpty() ? -1 : 0;
-            studyShowingBack = false;
+            selectedIndex = -1;
             rebuildCardLibrary();
-            updateStudyPanel();
         } catch (SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Database error", "Could not load flashcards: " + e.getMessage());
         }
+    }
+
+    // ----- Study Cards tab: subject/topic pick + one-at-a-time flip card ---
+
+    @FXML
+    private void handleStartStudying() {
+        Subject subject = studySubjectComboBox.getValue();
+        if (subject == null) {
+            showAlert(Alert.AlertType.WARNING, "No subject selected", "Choose a subject to study first.");
+            return;
+        }
+
+        Topic topic = studyTopicComboBox.getValue();
+        RevisionStatus status = studyStatusComboBox.getValue();
+        try {
+            List<Flashcard> matches = flashcardService.getFilteredFlashcards(subject.getId(), null, status);
+            if (topic != null) {
+                List<Flashcard> byTopic = new java.util.ArrayList<>();
+                for (Flashcard card : matches) {
+                    if (card.getTopicId() != null && card.getTopicId().intValue() == topic.getId()) {
+                        byTopic.add(card);
+                    }
+                }
+                matches = byTopic;
+            }
+            studyCards.setAll(matches);
+        } catch (SQLException e) {
+            showAlert(Alert.AlertType.ERROR, "Database error", "Could not load flashcards: " + e.getMessage());
+            return;
+        }
+
+        if (studyCards.isEmpty()) {
+            studyPanel.setVisible(false);
+            studyPanel.setManaged(false);
+            studyStatusLabel.setText(status == null
+                    ? "No flashcards found for that selection yet."
+                    : "No " + status.getLabel().toLowerCase() + " flashcards found for that selection.");
+            return;
+        }
+
+        studyStatusLabel.setText(status == null
+                ? "Studying " + studyCards.size() + " card" + (studyCards.size() == 1 ? "" : "s") + "."
+                : "Studying " + studyCards.size() + " " + status.getLabel().toLowerCase()
+                + " card" + (studyCards.size() == 1 ? "" : "s") + ".");
+        studyPanel.setVisible(true);
+        studyPanel.setManaged(true);
+        studyCardIndex = 0;
+        resetToFront();
+        updateStudyPanel();
+    }
+
+    @FXML
+    private void handleFlipCard() {
+        if (studyCards.isEmpty()) {
+            return;
+        }
+        animateFlip();
+    }
+
+    @FXML
+    private void handlePreviousStudyCard() {
+        if (studyCards.isEmpty()) {
+            return;
+        }
+        studyCardIndex = studyCardIndex <= 0 ? studyCards.size() - 1 : studyCardIndex - 1;
+        resetToFront();
+        updateStudyPanel();
+    }
+
+    @FXML
+    private void handleNextStudyCard() {
+        if (studyCards.isEmpty()) {
+            return;
+        }
+        studyCardIndex = studyCardIndex >= studyCards.size() - 1 ? 0 : studyCardIndex + 1;
+        resetToFront();
+        updateStudyPanel();
+    }
+
+    /** Plays a quick squash/un-squash rotation, swapping the visible face at the midpoint. */
+    private void animateFlip() {
+        Rotate rotate = new Rotate(0, Rotate.Y_AXIS);
+        rotate.pivotXProperty().bind(flipCardStack.widthProperty().divide(2));
+        rotate.pivotYProperty().bind(flipCardStack.heightProperty().divide(2));
+        flipCardStack.getTransforms().setAll(rotate);
+
+        Timeline halfway = new Timeline(new KeyFrame(Duration.millis(150),
+                new KeyValue(rotate.angleProperty(), 90, Interpolator.EASE_IN)));
+        halfway.setOnFinished(event -> {
+            studyShowingBack = !studyShowingBack;
+            flipCardFront.setVisible(!studyShowingBack);
+            flipCardBack.setVisible(studyShowingBack);
+            flipCardFront.setManaged(true);
+            flipCardBack.setManaged(true);
+
+            Timeline secondHalf = new Timeline(new KeyFrame(Duration.millis(150),
+                    new KeyValue(rotate.angleProperty(), 0, Interpolator.EASE_OUT)));
+            secondHalf.play();
+        });
+        halfway.play();
+    }
+
+    private void resetToFront() {
+        studyShowingBack = false;
+        flipCardStack.getTransforms().clear();
+        flipCardFront.setVisible(true);
+        flipCardFront.setManaged(true);
+        flipCardBack.setVisible(false);
+        flipCardBack.setManaged(true);
+    }
+
+    private void updateStudyPanel() {
+        if (studyCards.isEmpty() || studyCardIndex < 0 || studyCardIndex >= studyCards.size()) {
+            studyFrontLabel.setText("");
+            studyBackLabel.setText("");
+            studyPositionLabel.setText("");
+            return;
+        }
+        Flashcard card = studyCards.get(studyCardIndex);
+        studyFrontLabel.setText(card.getFront());
+        studyBackLabel.setText(card.getBack());
+        studyPositionLabel.setText((studyCardIndex + 1) + " of " + studyCards.size());
     }
 
     private void refreshSubjects() {
@@ -610,6 +769,7 @@ public class FlashcardController {
     private void showAlert(Alert.AlertType type, String header, String message) {
         Alert alert = new Alert(type, message);
         alert.setHeaderText(header);
+        DialogStyler.style(alert);
         alert.showAndWait();
     }
 }

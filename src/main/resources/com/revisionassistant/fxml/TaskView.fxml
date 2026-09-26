@@ -11,6 +11,7 @@
 <?import javafx.scene.control.Spinner?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.VBox?>
@@ -24,6 +25,13 @@
                     styleClass="scroll-pane" prefViewportHeight="250">
             <content>
                 <VBox spacing="12" styleClass="task-form-card">
+                    <HBox spacing="16" alignment="CENTER_LEFT" styleClass="view-toolbar">
+                        <VBox spacing="2">
+                            <Label text="Tasks" styleClass="view-title"/>
+                            <Label text="Turn your study path into focused, completable missions." styleClass="page-subtitle"/>
+                        </VBox>
+                        <Region HBox.hgrow="ALWAYS"/>
+                    </HBox>
                     <padding>
                         <Insets top="16" right="16" bottom="16" left="16"/>
                     </padding>
@@ -45,6 +53,8 @@
                         <Spinner fx:id="estimatedMinutesSpinner" prefWidth="100"/>
                         <Label text="Priority:" styleClass="filter-label"/>
                         <ComboBox fx:id="priorityComboBox" prefWidth="125"/>
+                        <Label text="Status:" styleClass="filter-label"/>
+                        <ComboBox fx:id="statusComboBox" prefWidth="135"/>
                         <Label text="Deadline:" styleClass="filter-label"/>
                         <DatePicker fx:id="deadlinePicker" HBox.hgrow="ALWAYS"/>
                     </HBox>

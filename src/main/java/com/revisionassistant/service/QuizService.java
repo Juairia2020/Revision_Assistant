@@ -47,8 +47,8 @@ public class QuizService {
     // ----- Question management -------------------------------------
 
     public QuizQuestion addQuestion(int subjectId, Integer topicId, String questionText,
-                                     String optionA, String optionB, String optionC, String optionD,
-                                     QuizOption correctOption) throws SQLException {
+                                    String optionA, String optionB, String optionC, String optionD,
+                                    QuizOption correctOption) throws SQLException {
         validateSubject(subjectId);
         validateQuestion(questionText, optionA, optionB, optionC, optionD, correctOption);
         QuizQuestion question = new QuizQuestion(subjectId, topicId, questionText.trim(),
@@ -101,18 +101,48 @@ public class QuizService {
      * matching entry in {@code answers}.
      */
     public QuizAttempt submitAttempt(int subjectId, Integer topicId, List<QuizQuestion> questions,
-                                      Map<Integer, QuizOption> answers) throws SQLException {
+                                     Map<Integer, QuizOption> answers, int timeTakenSeconds) throws SQLException {
+        return submitAttempt(subjectId, topicId, questions, answers, timeTakenSeconds, false);
+    }
+
+    /**
+     * Scores a completed quiz and stores the attempt together with
+     * each individual answer.
+     * <p>
+     * When {@code allowUnanswered} is {@code false} (a normal manual
+     * submission), every question passed in must have a matching
+     * entry in {@code answers}. When {@code true} (an automatic
+     * submission because the quiz's time limit ran out), any question
+     * missing an answer is simply scored as incorrect instead of
+     * rejecting the submission.
+     */
+    public QuizAttempt submitAttempt(int subjectId, Integer topicId, List<QuizQuestion> questions,
+                                     Map<Integer, QuizOption> answers, int timeTakenSeconds,
+                                     boolean allowUnanswered) throws SQLException {
         if (questions == null || questions.isEmpty()) {
             throw new IllegalArgumentException("There are no questions to submit.");
         }
 
         int correctCount = 0;
+        Map<Integer, QuizOption> storedSelections = new HashMap<>();
         Map<Integer, Boolean> correctness = new HashMap<>();
         for (QuizQuestion question : questions) {
             QuizOption selected = answers.get(question.getId());
             if (selected == null) {
-                throw new IllegalArgumentException("Please answer every question before submitting.");
+                if (!allowUnanswered) {
+                    throw new IllegalArgumentException("Please answer every question before submitting.");
+                }
+                // No answer was picked before time ran out - record it as
+                // incorrect. The placeholder option stored below is only
+                // there to satisfy the database's "an option was picked"
+                // column; it is never compared back against the correct
+                // option, so it can't accidentally look like a lucky guess.
+                selected = firstOptionOtherThan(question.getCorrectOption());
+                storedSelections.put(question.getId(), selected);
+                correctness.put(question.getId(), false);
+                continue;
             }
+            storedSelections.put(question.getId(), selected);
             boolean correct = selected == question.getCorrectOption();
             correctness.put(question.getId(), correct);
             if (correct) {
@@ -122,17 +152,25 @@ public class QuizService {
 
         int scorePercent = Math.round(100f * correctCount / questions.size());
         QuizAttempt attempt = new QuizAttempt(subjectId, topicId, LocalDate.now(),
-                questions.size(), correctCount, scorePercent);
+                questions.size(), correctCount, scorePercent, Math.max(0, timeTakenSeconds));
         attemptDAO.insert(attempt);
 
         for (QuizQuestion question : questions) {
-            QuizOption selected = answers.get(question.getId());
             QuizAttemptAnswer answer = new QuizAttemptAnswer(attempt.getId(), question.getId(),
-                    selected, correctness.get(question.getId()));
+                    storedSelections.get(question.getId()), correctness.get(question.getId()));
             attemptAnswerDAO.insert(answer);
         }
 
         return attempt;
+    }
+
+    private QuizOption firstOptionOtherThan(QuizOption excluded) {
+        for (QuizOption option : QuizOption.values()) {
+            if (option != excluded) {
+                return option;
+            }
+        }
+        return QuizOption.A;
     }
 
     // ----- Attempt history / dashboard aggregation --------------------
@@ -200,7 +238,7 @@ public class QuizService {
     }
 
     private void validateQuestion(String questionText, String optionA, String optionB,
-                                   String optionC, String optionD, QuizOption correctOption) {
+                                  String optionC, String optionD, QuizOption correctOption) {
         if (questionText == null || questionText.trim().isEmpty()) {
             throw new IllegalArgumentException("Question text cannot be empty.");
         }

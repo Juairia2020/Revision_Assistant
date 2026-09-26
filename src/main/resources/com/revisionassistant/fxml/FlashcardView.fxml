@@ -6,100 +6,171 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.FlowPane?>
-<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.revisionassistant.controller.FlashcardController">
     <top>
-        <VBox spacing="10" styleClass="view-header" BorderPane.alignment="CENTER">
+        <VBox spacing="4" styleClass="view-header" BorderPane.alignment="CENTER">
             <padding>
                 <Insets top="16" right="16" bottom="10" left="16"/>
             </padding>
             <children>
                 <Label text="Flashcards" styleClass="view-title"/>
-                <Label text="Generate structured JSON from your study material using any AI tool, save it as a .json file, and import it here." wrapText="true" styleClass="row-meta"/>
-
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <children>
-                        <ComboBox fx:id="subjectComboBox" promptText="Subject" prefWidth="160"/>
-                        <ComboBox fx:id="topicComboBox" promptText="Topic (optional)" prefWidth="170"/>
-                        <ComboBox fx:id="revisionStatusComboBox" prefWidth="140"/>
-                        <CheckBox fx:id="difficultCheckBox" text="Difficult"/>
-                    </children>
-                </HBox>
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <children>
-                        <TextArea fx:id="frontArea" promptText="Front (question / prompt)" prefRowCount="2" prefWidth="320" wrapText="true" HBox.hgrow="ALWAYS"/>
-                        <TextArea fx:id="backArea" promptText="Back (answer)" prefRowCount="2" prefWidth="320" wrapText="true" HBox.hgrow="ALWAYS"/>
-                    </children>
-                </HBox>
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <children>
-                        <Button text="Add" onAction="#handleAddFlashcard" styleClass="primary-button"/>
-                        <Button text="Update" onAction="#handleEditFlashcard" styleClass="secondary-button"/>
-                        <Button text="Delete" onAction="#handleDeleteFlashcard" styleClass="danger-button"/>
-                        <Button fx:id="importJsonButton" text="Import JSON" onAction="#handleImportJson" styleClass="secondary-button"/>
-                        <ProgressIndicator fx:id="importProgressIndicator" prefWidth="18" prefHeight="18" visible="false"/>
-                        <Label fx:id="importStatusLabel" styleClass="row-meta"/>
-                        <Button text="Copy Prompt" onAction="#handleCopyJsonPrompt" styleClass="link-button"/>
-                    </children>
-                </HBox>
-
-                <Separator/>
-
-                <HBox spacing="10" alignment="CENTER_LEFT" styleClass="filter-bar">
-                    <children>
-                        <Label text="Filter:" styleClass="filter-label"/>
-                        <ComboBox fx:id="filterSubjectComboBox" prefWidth="150"/>
-                        <ComboBox fx:id="filterDifficultComboBox" prefWidth="140"/>
-                        <ComboBox fx:id="filterStatusComboBox" prefWidth="140"/>
-                        <Button text="Clear filters" onAction="#handleClearFilters" styleClass="link-button"/>
-                    </children>
-                </HBox>
+                <Label text="Study your cards one at a time, or manage the full library and import new cards from JSON." wrapText="true" styleClass="row-meta"/>
             </children>
         </VBox>
     </top>
     <center>
-        <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" styleClass="dashboard-scroll">
-            <content>
-                <VBox spacing="18" styleClass="page-content">
-                    <children>
-                        <VBox spacing="10" styleClass="study-card-shell">
-                            <children>
-                                <HBox alignment="CENTER_LEFT" spacing="10">
-                                    <Label text="Study Card" styleClass="section-title" HBox.hgrow="ALWAYS"/>
-                                    <Label fx:id="studyPositionLabel" styleClass="counter-pill"/>
-                                </HBox>
-                                <VBox spacing="10" styleClass="flashcard-stage">
+        <TabPane tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+            <tabs>
+
+                <!-- ========================= Study Cards ========================= -->
+                <Tab text="Study Cards">
+                    <content>
+                        <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" styleClass="dashboard-scroll">
+                            <content>
+                                <VBox spacing="18" alignment="TOP_CENTER" fillWidth="true" styleClass="page-content">
+                                    <padding>
+                                        <Insets top="16" right="16" bottom="24" left="16"/>
+                                    </padding>
                                     <children>
-                                        <Label fx:id="studyFrontLabel" wrapText="true" styleClass="flashcard-question"/>
-                                        <Label fx:id="studyBackLabel" wrapText="true" styleClass="flashcard-answer"/>
+
+                                        <VBox spacing="10" styleClass="dashboard-section">
+                                            <children>
+                                                <Label text="Choose what to study" styleClass="section-title"/>
+                                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                                    <children>
+                                                        <ComboBox fx:id="studySubjectComboBox" promptText="Subject" prefWidth="180"/>
+                                                        <ComboBox fx:id="studyTopicComboBox" promptText="Topic (optional)" prefWidth="190"/>
+                                                        <ComboBox fx:id="studyStatusComboBox" prefWidth="160"/>
+                                                        <Button text="Start Studying" onAction="#handleStartStudying" styleClass="primary-button"/>
+                                                    </children>
+                                                </HBox>
+                                                <Label fx:id="studyStatusLabel" text="Choose a subject, then press Start Studying." styleClass="row-meta"/>
+                                            </children>
+                                        </VBox>
+
+                                        <VBox fx:id="studyPanel" spacing="10" alignment="TOP_CENTER" maxWidth="780" styleClass="study-card-shell" visible="false" managed="false">
+                                            <children>
+                                                <HBox alignment="CENTER_LEFT" spacing="10">
+                                                    <Label text="Study Card" styleClass="section-title" HBox.hgrow="ALWAYS"/>
+                                                    <Label fx:id="studyPositionLabel" styleClass="counter-pill"/>
+                                                </HBox>
+                                                <StackPane fx:id="flipCardStack" styleClass="flashcard-stage-container" onMouseClicked="#handleFlipCard">
+                                                    <children>
+                                                        <VBox fx:id="flipCardFront" spacing="10" styleClass="flashcard-stage">
+                                                            <children>
+                                                                <Label fx:id="studyFrontLabel" wrapText="true" styleClass="flashcard-question"/>
+                                                                <Label text="Click the card to reveal the answer" styleClass="study-flip-hint"/>
+                                                            </children>
+                                                        </VBox>
+                                                        <VBox fx:id="flipCardBack" spacing="10" styleClass="flashcard-stage flip-card-face-back" visible="false" managed="true">
+                                                            <children>
+                                                                <Label fx:id="studyBackLabel" wrapText="true" styleClass="flashcard-answer"/>
+                                                                <Label text="Click the card to see the question again" styleClass="study-flip-hint"/>
+                                                            </children>
+                                                        </VBox>
+                                                    </children>
+                                                </StackPane>
+                                                <HBox spacing="10" alignment="CENTER">
+                                                    <Button text="Previous" onAction="#handlePreviousStudyCard" styleClass="secondary-button"/>
+                                                    <Button text="Next" onAction="#handleNextStudyCard" styleClass="secondary-button"/>
+                                                </HBox>
+                                            </children>
+                                        </VBox>
+
                                     </children>
                                 </VBox>
-                                <HBox spacing="10" alignment="CENTER">
-                                    <Button text="Previous" onAction="#handlePreviousCard" styleClass="secondary-button"/>
-                                    <Button text="Show / Hide Answer" onAction="#handleShowAnswer" styleClass="primary-button"/>
-                                    <Button text="Next" onAction="#handleNextCard" styleClass="secondary-button"/>
-                                </HBox>
-                            </children>
-                        </VBox>
+                            </content>
+                        </ScrollPane>
+                    </content>
+                </Tab>
 
-                        <HBox alignment="CENTER_LEFT" spacing="10">
-                            <Label text="Your Card Library" styleClass="section-title" HBox.hgrow="ALWAYS"/>
-                            <Label text="Click a card to edit or study" styleClass="row-meta"/>
-                        </HBox>
-                        <FlowPane fx:id="cardsPane" hgap="14" vgap="14" prefWrapLength="760" styleClass="card-library"/>
-                    </children>
-                    <padding><Insets top="0" right="16" bottom="24" left="16"/></padding>
-                </VBox>
-            </content>
-        </ScrollPane>
+                <!-- ========================= Manage Cards ========================= -->
+                <Tab text="Manage Cards">
+                    <content>
+                        <BorderPane>
+                            <top>
+                                <VBox spacing="10" styleClass="view-header">
+                                    <padding>
+                                        <Insets top="14" right="16" bottom="10" left="16"/>
+                                    </padding>
+                                    <children>
+                                        <Label text="Generate structured JSON from your study material using any AI tool, save it as a .json file, and import it here." wrapText="true" styleClass="row-meta"/>
+
+                                        <HBox spacing="10" alignment="CENTER_LEFT">
+                                            <children>
+                                                <ComboBox fx:id="subjectComboBox" promptText="Subject" prefWidth="160"/>
+                                                <ComboBox fx:id="topicComboBox" promptText="Topic (optional)" prefWidth="170"/>
+                                                <ComboBox fx:id="revisionStatusComboBox" prefWidth="140"/>
+                                                <CheckBox fx:id="difficultCheckBox" text="Difficult"/>
+                                            </children>
+                                        </HBox>
+                                        <HBox spacing="10" alignment="CENTER_LEFT">
+                                            <children>
+                                                <TextArea fx:id="frontArea" promptText="Front (question / prompt)" prefRowCount="2" prefWidth="320" wrapText="true" HBox.hgrow="ALWAYS"/>
+                                                <TextArea fx:id="backArea" promptText="Back (answer)" prefRowCount="2" prefWidth="320" wrapText="true" HBox.hgrow="ALWAYS"/>
+                                            </children>
+                                        </HBox>
+                                        <HBox spacing="10" alignment="CENTER_LEFT">
+                                            <children>
+                                                <Button text="Add" onAction="#handleAddFlashcard" styleClass="primary-button"/>
+                                                <Button text="Update" onAction="#handleEditFlashcard" styleClass="secondary-button"/>
+                                                <Button text="Delete" onAction="#handleDeleteFlashcard" styleClass="danger-button"/>
+                                                <Button fx:id="importJsonButton" text="Import JSON" onAction="#handleImportJson" styleClass="secondary-button"/>
+                                                <ProgressIndicator fx:id="importProgressIndicator" prefWidth="18" prefHeight="18" visible="false"/>
+                                                <Label fx:id="importStatusLabel" styleClass="row-meta"/>
+                                                <Button text="Copy Prompt" onAction="#handleCopyJsonPrompt" styleClass="link-button"/>
+                                            </children>
+                                        </HBox>
+
+                                        <Separator/>
+
+                                        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="filter-bar">
+                                            <children>
+                                                <Label text="Filter:" styleClass="filter-label"/>
+                                                <ComboBox fx:id="filterSubjectComboBox" prefWidth="150"/>
+                                                <ComboBox fx:id="filterDifficultComboBox" prefWidth="140"/>
+                                                <ComboBox fx:id="filterStatusComboBox" prefWidth="140"/>
+                                                <Button text="Clear filters" onAction="#handleClearFilters" styleClass="link-button"/>
+                                            </children>
+                                        </HBox>
+                                    </children>
+                                </VBox>
+                            </top>
+                            <center>
+                                <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" styleClass="dashboard-scroll">
+                                    <content>
+                                        <VBox spacing="12" styleClass="page-content">
+                                            <padding>
+                                                <Insets top="10" right="16" bottom="24" left="16"/>
+                                            </padding>
+                                            <children>
+                                                <HBox alignment="CENTER_LEFT" spacing="10">
+                                                    <Label text="Your Card Library" styleClass="section-title" HBox.hgrow="ALWAYS"/>
+                                                    <Label text="Click a card to edit it" styleClass="row-meta"/>
+                                                </HBox>
+                                                <FlowPane fx:id="cardsPane" hgap="14" vgap="14" prefWrapLength="760" styleClass="card-library"/>
+                                            </children>
+                                        </VBox>
+                                    </content>
+                                </ScrollPane>
+                            </center>
+                        </BorderPane>
+                    </content>
+                </Tab>
+
+            </tabs>
+        </TabPane>
     </center>
 </BorderPane>

@@ -48,6 +48,7 @@ public class Main extends Application {
     private void showFatalError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR, message);
         alert.setHeaderText("Startup error");
+        com.revisionassistant.util.DialogStyler.style(alert);
         alert.showAndWait();
     }
 

@@ -25,7 +25,7 @@
                         <Label text="Subject:"/>
                         <ComboBox fx:id="subjectComboBox" prefWidth="180"/>
                         <TextField fx:id="topicNameField" promptText="Topic name" prefWidth="220"/>
-                        <CheckBox fx:id="completedCheckBox" text="Completed"/>
+                        <CheckBox fx:id="completedCheckBox" text="Completed (set from Study Path)"/>
                     </children>
                 </HBox>
                 <HBox spacing="10" alignment="CENTER_LEFT">

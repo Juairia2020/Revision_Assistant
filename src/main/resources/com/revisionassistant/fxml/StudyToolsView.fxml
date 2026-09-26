@@ -87,20 +87,6 @@
                                             </children>
                                         </HBox>
 
-                                        <VBox spacing="8" styleClass="dashboard-section">
-                                            <children>
-                                                <Label text="Dependency path between two topics" styleClass="section-title"/>
-                                                <HBox spacing="10" alignment="CENTER_LEFT">
-                                                    <children>
-                                                        <Label text="From the topic above to:"/>
-                                                        <ComboBox fx:id="targetTopicComboBox" promptText="Target topic" prefWidth="220"/>
-                                                        <Button text="Find Path" onAction="#handleFindPath" styleClass="secondary-button"/>
-                                                    </children>
-                                                </HBox>
-                                                <VBox fx:id="pathBox" spacing="6"/>
-                                            </children>
-                                        </VBox>
-
                                     </children>
                                 </VBox>
                             </content>
@@ -108,45 +94,6 @@
                     </content>
                 </Tab>
 
-
-                <!-- ================= API Demonstration ================= -->
-                <Tab text="API Demo">
-                    <content>
-                        <ScrollPane fitToWidth="true" styleClass="dashboard-scroll">
-                            <content>
-                                <VBox spacing="16" styleClass="dashboard">
-                                    <padding>
-                                        <Insets top="16" right="16" bottom="16" left="16"/>
-                                    </padding>
-                                    <children>
-                                        <VBox spacing="10" styleClass="dashboard-section">
-                                            <children>
-                                                <Label text="Public API response demonstration" styleClass="section-title"/>
-                                                <Label text="This small demo requests public JSON, deserializes it with Jackson, and displays the resulting Java DTO. No API key or account is required." wrapText="true" styleClass="row-meta"/>
-                                                <Label text="Endpoint: https://jsonplaceholder.typicode.com/todos/1" wrapText="true" styleClass="row-meta"/>
-                                                <HBox spacing="10" alignment="CENTER_LEFT">
-                                                    <children>
-                                                        <Button fx:id="apiLoadButton" text="Load Sample API Data" onAction="#handleLoadApiDemo" styleClass="primary-button"/>
-                                                        <Button fx:id="apiCancelButton" text="Cancel" onAction="#handleCancelApiDemo" styleClass="danger-button" disable="true"/>
-                                                        <ProgressIndicator fx:id="apiProgressIndicator" prefWidth="20" prefHeight="20" visible="false"/>
-                                                        <Label fx:id="apiStatusLabel" styleClass="row-meta" wrapText="true"/>
-                                                    </children>
-                                                </HBox>
-                                            </children>
-                                        </VBox>
-
-                                        <VBox spacing="8" styleClass="dashboard-section">
-                                            <children>
-                                                <Label text="Converted Java object" styleClass="section-title"/>
-                                                <Label fx:id="apiResultLabel" text="Load the sample to see the mapped DTO values." wrapText="true" styleClass="row-title"/>
-                                            </children>
-                                        </VBox>
-                                    </children>
-                                </VBox>
-                            </content>
-                        </ScrollPane>
-                    </content>
-                </Tab>
 
                 <!-- ================= Study Planner ================= -->
                 <Tab text="Study Planner">

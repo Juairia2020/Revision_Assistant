@@ -1,56 +1,71 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.DatePicker?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.Slider?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.revisionassistant.controller.ExamController">
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.revisionassistant.controller.ExamController"
+            styleClass="view-root">
     <top>
-        <VBox spacing="10" styleClass="view-header" BorderPane.alignment="CENTER">
-            <padding>
-                <Insets top="16" right="16" bottom="10" left="16"/>
-            </padding>
-            <children>
-                <Label text="Exams" styleClass="view-title"/>
-
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <children>
-                        <ComboBox fx:id="subjectComboBox" promptText="Subject" prefWidth="160"/>
-                        <TextField fx:id="titleField" promptText="Exam title (e.g. Final exam)" prefWidth="220" HBox.hgrow="ALWAYS"/>
-                        <Label text="Date:"/>
-                        <DatePicker fx:id="examDatePicker" prefWidth="150"/>
-                    </children>
-                </HBox>
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <children>
-                        <Label text="Preparation:"/>
-                        <Slider fx:id="progressSlider" min="0" max="100" value="0" prefWidth="220"
-                                majorTickUnit="25" showTickMarks="true"/>
-                        <Label fx:id="progressValueLabel" text="0%" styleClass="progress-value-label"/>
-                    </children>
-                </HBox>
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <children>
-                        <Button text="Add" onAction="#handleAddExam" styleClass="primary-button"/>
-                        <Button text="Update" onAction="#handleEditExam" styleClass="secondary-button"/>
-                        <Button text="Delete" onAction="#handleDeleteExam" styleClass="danger-button"/>
-                    </children>
-                </HBox>
-            </children>
+        <VBox spacing="4" styleClass="view-header">
+            <padding><Insets top="16" right="20" bottom="12" left="20"/></padding>
+            <Label text="Exams" styleClass="view-title"/>
+            <Label text="Create exams, attach the syllabus topics, and let completion drive your preparation progress."
+                   styleClass="page-subtitle" wrapText="true"/>
         </VBox>
     </top>
     <center>
-        <ListView fx:id="examsList" BorderPane.alignment="CENTER" styleClass="feature-list">
-            <BorderPane.margin><Insets top="0" right="16" bottom="16" left="16"/></BorderPane.margin>
-        </ListView>
-</center>
+        <SplitPane dividerPositions="0.38">
+            <items>
+                <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
+                    <content>
+                        <VBox spacing="14" styleClass="page-content">
+                            <padding><Insets top="16" right="16" bottom="20" left="16"/></padding>
+
+                            <VBox spacing="10" styleClass="dashboard-section">
+                                <Label text="Exam details" styleClass="section-title"/>
+                                <Label text="Subject" styleClass="filter-label"/>
+                                <ComboBox fx:id="subjectComboBox" promptText="Choose subject" prefWidth="320"/>
+                                <Label text="Exam title" styleClass="filter-label"/>
+                                <TextField fx:id="titleField" promptText="e.g. Midterm — Organic Chemistry"/>
+                                <Label text="Exam date" styleClass="filter-label"/>
+                                <DatePicker fx:id="examDatePicker" promptText="Choose exam date" maxWidth="Infinity"/>
+
+                                <HBox alignment="CENTER_LEFT" spacing="8">
+                                    <Label text="Syllabus topics" styleClass="filter-label" HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="selectedTopicCountLabel" text="0 topics selected" styleClass="badge-accent"/>
+                                </HBox>
+                                <Label text="Select every topic that belongs to this exam. Progress is calculated from these topics' completion state."
+                                       styleClass="row-meta" wrapText="true"/>
+                                <ListView fx:id="topicSelectionList" prefHeight="190" minHeight="150"/>
+
+                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                    <Button text="Add Exam" onAction="#handleAddExam" styleClass="primary-button"/>
+                                    <Button text="Update" onAction="#handleEditExam" styleClass="secondary-button"/>
+                                    <Button text="Delete" onAction="#handleDeleteExam" styleClass="danger-button"/>
+                                    <Button text="Refresh" onAction="#handleRefresh" styleClass="link-button"/>
+                                </HBox>
+                            </VBox>
+
+                            <VBox spacing="8" styleClass="dashboard-section">
+                                <Label text="How exam progress works" styleClass="section-title"/>
+                                <Label text="100% means every topic selected for the exam is completed in Topics. Completing or undoing those topics automatically changes the exam's progress the next time the exam list refreshes."
+                                       styleClass="row-meta" wrapText="true"/>
+                            </VBox>
+                        </VBox>
+                    </content>
+                </ScrollPane>
+
+                <VBox spacing="10" styleClass="page-content">
+                    <padding><Insets top="16" right="16" bottom="20" left="16"/></padding>
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <Label text="Your exams" styleClass="section-title" HBox.hgrow="ALWAYS"/>
+                        <Label text="Progress follows syllabus completion" styleClass="row-meta"/>
+                    </HBox>
+                    <ListView fx:id="examsList" VBox.vgrow="ALWAYS"/>
+                </VBox>
+            </items>
+        </SplitPane>
+    </center>
 </BorderPane>

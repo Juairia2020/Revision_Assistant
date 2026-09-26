@@ -1,6 +1,7 @@
 package com.revisionassistant.navigation;
 
 import com.revisionassistant.session.CurrentUser;
+import com.revisionassistant.util.ThemeManager;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -43,9 +44,10 @@ public final class AppNavigator {
         Parent root = loader.load();
 
         Scene scene = new Scene(root, 1120, 720);
-        scene.setFill(Color.web("#F3F1FC"));
+        scene.setFill(Color.WHITE);
         scene.getStylesheets().add(
                 AppNavigator.class.getResource(CSS).toExternalForm());
+        ThemeManager.applyForCurrentUser(scene);
 
         stage.setTitle(title);
         stage.setScene(scene);

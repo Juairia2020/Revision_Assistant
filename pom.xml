@@ -11,10 +11,10 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>26</maven.compiler.release>
-        <javafx.version>26.0.2</javafx.version>
-        <sqlite.jdbc.version>3.53.2.1</sqlite.jdbc.version>
-        <jackson.version>2.19.2</jackson.version>
+        <maven.compiler.release>21</maven.compiler.release>
+        <javafx.version>21.0.2</javafx.version>
+        <sqlite.jdbc.version>3.45.3.0</sqlite.jdbc.version>
+        <jackson.version>2.17.1</jackson.version>
     </properties>
 
     <dependencies>
@@ -37,7 +37,7 @@
             <version>${sqlite.jdbc.version}</version>
         </dependency>
 
-        <!-- Jackson: JSON import/deserialization for external AI-generated files -->
+        <!-- Jackson: JSON import/deserialization -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -48,14 +48,12 @@
     <build>
         <finalName>revision-assistant</finalName>
         <plugins>
-            <!-- Compiles the project for JDK 26 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.14.1</version>
+                <version>3.13.0</version>
             </plugin>
 
-            <!-- Lets IntelliJ / the command line run the app with:  mvn javafx:run -->
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>

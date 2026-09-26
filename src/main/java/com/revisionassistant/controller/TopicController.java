@@ -3,6 +3,7 @@ package com.revisionassistant.controller;
 import com.revisionassistant.model.Subject;
 import com.revisionassistant.model.Topic;
 import com.revisionassistant.service.SubjectService;
+import com.revisionassistant.util.DialogStyler;
 import com.revisionassistant.service.TopicService;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
@@ -67,7 +68,8 @@ public class TopicController {
                 if (empty || topic == null) { setGraphic(null); return; }
                 HBox row = new HBox(12); row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
                 CheckBox check = new CheckBox(); check.setSelected(topic.isCompleted());
-                check.setOnAction(e -> { try { topicService.setCompleted(topic.getId(), check.isSelected()); topic.setCompleted(check.isSelected()); } catch (SQLException ex) { showAlert(Alert.AlertType.ERROR,"Database error",ex.getMessage()); } });
+                check.setDisable(true);
+                check.setTooltip(new javafx.scene.control.Tooltip("Mark topics complete from My Study Path"));
                 Label name = new Label(topic.getName()); name.getStyleClass().add("card-title");
                 Label meta = new Label(topic.isCompleted() ? "Completed" : "In progress"); meta.getStyleClass().add(topic.isCompleted() ? "badge-success" : "badge-accent");
                 row.getChildren().addAll(check, name, meta); setGraphic(row);
@@ -76,6 +78,8 @@ public class TopicController {
         topicsList.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
             if (newValue != null) { topicNameField.setText(newValue.getName()); completedCheckBox.setSelected(newValue.isCompleted()); }
         });
+        completedCheckBox.setDisable(true);
+        completedCheckBox.setTooltip(new javafx.scene.control.Tooltip("Mark topics complete from My Study Path"));
 
         refreshSubjects();
     }
@@ -102,7 +106,6 @@ public class TopicController {
         }
         try {
             selected.setName(topicNameField.getText());
-            selected.setCompleted(completedCheckBox.isSelected());
             topicService.updateTopic(selected);
             refreshTopics();
         } catch (IllegalArgumentException | SQLException e) {
@@ -169,6 +172,7 @@ public class TopicController {
     private void showAlert(Alert.AlertType type, String header, String message) {
         Alert alert = new Alert(type, message);
         alert.setHeaderText(header);
+        DialogStyler.style(alert);
         alert.showAndWait();
     }
 }

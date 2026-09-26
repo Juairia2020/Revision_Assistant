@@ -4,6 +4,7 @@ import com.revisionassistant.dao.SubjectDAO;
 import com.revisionassistant.dao.TaskDAO;
 import com.revisionassistant.model.Priority;
 import com.revisionassistant.model.Task;
+import com.revisionassistant.model.TaskStatus;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -26,13 +27,24 @@ public class TaskService {
         this.subjectDAO = new SubjectDAO();
     }
 
+    /**
+     * Adds a task with an explicit starting status (e.g. Not started,
+     * In progress, Completed).
+     */
     public Task addTask(int subjectId, Integer topicId, String title, int estimatedMinutes,
-                         Priority priority, LocalDate deadline) throws SQLException {
+                         Priority priority, LocalDate deadline, TaskStatus startingStatus) throws SQLException {
         validateSubject(subjectId);
         validateTitle(title);
         Task task = new Task(subjectId, topicId, title.trim(), Math.max(estimatedMinutes, 0),
-                priority == null ? Priority.MEDIUM : priority, deadline, false);
+                priority == null ? Priority.MEDIUM : priority, deadline,
+                startingStatus == null ? TaskStatus.NOT_STARTED : startingStatus);
         return taskDAO.insert(task);
+    }
+
+    /** Adds a task that starts out as "Not started". */
+    public Task addTask(int subjectId, Integer topicId, String title, int estimatedMinutes,
+                         Priority priority, LocalDate deadline) throws SQLException {
+        return addTask(subjectId, topicId, title, estimatedMinutes, priority, deadline, TaskStatus.NOT_STARTED);
     }
 
     public List<Task> getAllTasks() throws SQLException {

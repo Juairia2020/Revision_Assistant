@@ -11,6 +11,11 @@ import java.util.Objects;
  * A task always belongs to a subject. The topic is optional (a task
  * can be about a subject in general, not one specific topic), as is
  * the deadline.
+ * <p>
+ * Every task carries a {@link TaskStatus}: this is the single source
+ * of truth for how far along the task is. {@link #isCompleted()} is a
+ * convenience view over that status (true only when the status is
+ * {@link TaskStatus#COMPLETED}).
  */
 public class Task {
 
@@ -21,25 +26,26 @@ public class Task {
     private int estimatedMinutes;
     private Priority priority;
     private LocalDate deadline;
-    private boolean completed;
+    private TaskStatus status;
 
     public Task() {
+        this.status = TaskStatus.NOT_STARTED;
     }
 
     public Task(int subjectId, Integer topicId, String title, int estimatedMinutes,
-                Priority priority, LocalDate deadline, boolean completed) {
+                Priority priority, LocalDate deadline, TaskStatus status) {
         this.subjectId = subjectId;
         this.topicId = topicId;
         this.title = title;
         this.estimatedMinutes = estimatedMinutes;
         this.priority = priority;
         this.deadline = deadline;
-        this.completed = completed;
+        this.status = status == null ? TaskStatus.NOT_STARTED : status;
     }
 
     public Task(int id, int subjectId, Integer topicId, String title, int estimatedMinutes,
-                Priority priority, LocalDate deadline, boolean completed) {
-        this(subjectId, topicId, title, estimatedMinutes, priority, deadline, completed);
+                Priority priority, LocalDate deadline, TaskStatus status) {
+        this(subjectId, topicId, title, estimatedMinutes, priority, deadline, status);
         this.id = id;
     }
 
@@ -99,17 +105,38 @@ public class Task {
         this.deadline = deadline;
     }
 
-    public boolean isCompleted() {
-        return completed;
+    public TaskStatus getStatus() {
+        return status == null ? TaskStatus.NOT_STARTED : status;
     }
 
+    /** Sets the task's status. The completed flag always follows this status. */
+    public void setStatus(TaskStatus status) {
+        this.status = status == null ? TaskStatus.NOT_STARTED : status;
+    }
+
+    public boolean isCompleted() {
+        return getStatus() == TaskStatus.COMPLETED;
+    }
+
+    /**
+     * Convenience setter kept for callers that only care about the
+     * done/not-done boundary. Setting completed to true moves the
+     * status to {@link TaskStatus#COMPLETED}; setting it to false
+     * moves a completed task back to {@link TaskStatus#NOT_STARTED}
+     * (a task that was already {@link TaskStatus#IN_PROGRESS} stays
+     * that way).
+     */
     public void setCompleted(boolean completed) {
-        this.completed = completed;
+        if (completed) {
+            this.status = TaskStatus.COMPLETED;
+        } else if (getStatus() == TaskStatus.COMPLETED) {
+            this.status = TaskStatus.NOT_STARTED;
+        }
     }
 
     /** True when the task has a deadline that has passed and is not yet done. */
     public boolean isOverdue() {
-        return !completed && deadline != null && deadline.isBefore(LocalDate.now());
+        return !isCompleted() && deadline != null && deadline.isBefore(LocalDate.now());
     }
 
     /** True when the task's deadline is today. */
@@ -138,6 +165,6 @@ public class Task {
     public String toString() {
         return "Task{id=" + id + ", subjectId=" + subjectId + ", topicId=" + topicId
                 + ", title='" + title + "', priority=" + priority
-                + ", deadline=" + deadline + ", completed=" + completed + "}";
+                + ", deadline=" + deadline + ", status=" + status + "}";
     }
 }

@@ -1,11 +1,9 @@
 package com.revisionassistant.controller;
 
-import com.revisionassistant.dto.ApiDemoResponseDTO;
 import com.revisionassistant.model.Subject;
 import com.revisionassistant.model.Task;
 import com.revisionassistant.model.Topic;
-import com.revisionassistant.service.ApiDemoException;
-import com.revisionassistant.service.ApiDemoService;
+import com.revisionassistant.util.DialogStyler;
 import com.revisionassistant.service.StudyPlannerService;
 import com.revisionassistant.service.StudyPlannerService.Strategy;
 import com.revisionassistant.service.StudyPlannerService.StudyPlan;
@@ -20,7 +18,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -50,15 +47,11 @@ public class StudyToolsController {
     private ComboBox<Topic> topicComboBox;
     @FXML
     private ComboBox<Topic> prerequisiteComboBox;
-    @FXML
-    private ComboBox<Topic> targetTopicComboBox;
 
     @FXML
     private VBox prerequisitesBox;
     @FXML
     private VBox dependentsBox;
-    @FXML
-    private VBox pathBox;
 
     // ----- Study Planner tab ---------------------------------------------
 
@@ -71,25 +64,10 @@ public class StudyToolsController {
     @FXML
     private VBox recommendedTasksBox;
 
-    // ----- API demonstration tab ---------------------------------------
-
-    @FXML
-    private Button apiLoadButton;
-    @FXML
-    private Button apiCancelButton;
-    @FXML
-    private ProgressIndicator apiProgressIndicator;
-    @FXML
-    private Label apiStatusLabel;
-    @FXML
-    private Label apiResultLabel;
-
     private final SubjectService subjectService = new SubjectService();
     private final TopicService topicService = new TopicService();
     private final TopicDependencyService dependencyService = new TopicDependencyService();
     private final StudyPlannerService plannerService = new StudyPlannerService();
-    private final ApiDemoService apiDemoService = new ApiDemoService();
-    private javafx.concurrent.Task<ApiDemoResponseDTO> apiTask;
 
     private final ObservableList<Subject> subjects = FXCollections.observableArrayList();
     private final ObservableList<Topic> allTopics = FXCollections.observableArrayList();
@@ -112,9 +90,6 @@ public class StudyToolsController {
 
         prerequisiteComboBox.setItems(allTopics);
         prerequisiteComboBox.setConverter(topicConverter(prerequisiteComboBox));
-
-        targetTopicComboBox.setItems(allTopics);
-        targetTopicComboBox.setConverter(topicConverter(targetTopicComboBox));
 
         refreshDependencyPanels();
     }
@@ -203,43 +178,8 @@ public class StudyToolsController {
         }
     }
 
-    @FXML
-    private void handleFindPath() {
-        Topic topic = topicComboBox.getValue();
-        Topic target = targetTopicComboBox.getValue();
-        pathBox.getChildren().clear();
-
-        if (topic == null || target == null) {
-            showAlert(Alert.AlertType.WARNING, "Choose two topics",
-                    "Select the current topic and a target topic first.");
-            return;
-        }
-
-        try {
-            List<Topic> path = dependencyService.getDependencyPath(topic.getId(), target.getId());
-            if (path.isEmpty()) {
-                pathBox.getChildren().add(emptyStateLabel("No dependency path connects these two topics."));
-                return;
-            }
-            StringBuilder chain = new StringBuilder();
-            for (int i = 0; i < path.size(); i++) {
-                if (i > 0) {
-                    chain.append("  →  ");
-                }
-                chain.append(path.get(i).getName());
-            }
-            Label chainLabel = new Label(chain.toString());
-            chainLabel.setWrapText(true);
-            chainLabel.getStyleClass().add("row-title");
-            pathBox.getChildren().add(chainLabel);
-        } catch (SQLException e) {
-            showAlert(Alert.AlertType.ERROR, "Database error", e.getMessage());
-        }
-    }
-
     private void refreshDependencyPanels() {
         Topic topic = topicComboBox.getValue();
-        pathBox.getChildren().clear();
 
         if (topic == null) {
             prerequisitesBox.getChildren().setAll(emptyStateLabel("Select a topic to inspect its dependencies."));
@@ -395,81 +335,6 @@ public class StudyToolsController {
         return row;
     }
 
-    // ----- API demonstration ---------------------------------------------
-
-    @FXML
-    private void handleLoadApiDemo() {
-        if (apiTask != null && apiTask.isRunning()) {
-            return;
-        }
-
-        apiLoadButton.setDisable(true);
-        apiCancelButton.setDisable(false);
-        apiProgressIndicator.setVisible(true);
-        apiStatusLabel.setText("Requesting public API…");
-        apiResultLabel.setText("");
-
-        apiTask = new javafx.concurrent.Task<>() {
-            @Override
-            protected ApiDemoResponseDTO call() throws Exception {
-                if (isCancelled()) {
-                    return null;
-                }
-                ApiDemoResponseDTO result = apiDemoService.loadSample();
-                if (isCancelled()) {
-                    return null;
-                }
-                return result;
-            }
-        };
-
-        apiTask.setOnSucceeded(event -> {
-            resetApiControls();
-            ApiDemoResponseDTO result = apiTask.getValue();
-            if (result != null) {
-                apiResultLabel.setText(
-                        "HTTP JSON response converted to Java DTO\n\n"
-                                + "User ID: " + result.getUserId() + "\n"
-                                + "Record ID: " + result.getId() + "\n"
-                                + "Title: " + result.getTitle() + "\n"
-                                + "Completed: " + result.getCompleted());
-            }
-        });
-
-        apiTask.setOnFailed(event -> {
-            Throwable error = apiTask.getException();
-            resetApiControls();
-            String message = error instanceof ApiDemoException
-                    ? error.getMessage()
-                    : "The API demonstration could not be completed.";
-            apiStatusLabel.setText(message);
-            apiResultLabel.setText("");
-        });
-
-        apiTask.setOnCancelled(event -> {
-            resetApiControls();
-            apiStatusLabel.setText("API request cancelled.");
-            apiResultLabel.setText("");
-        });
-
-        Thread worker = new Thread(apiTask, "api-demo-request");
-        worker.setDaemon(true);
-        worker.start();
-    }
-
-    @FXML
-    private void handleCancelApiDemo() {
-        if (apiTask != null && apiTask.isRunning()) {
-            apiTask.cancel();
-        }
-    }
-
-    private void resetApiControls() {
-        apiLoadButton.setDisable(false);
-        apiCancelButton.setDisable(true);
-        apiProgressIndicator.setVisible(false);
-    }
-
     // ----- Shared helpers -------------------------------------------------
 
     private void refreshSubjects() {
@@ -553,6 +418,7 @@ public class StudyToolsController {
     private void showAlert(Alert.AlertType type, String header, String message) {
         Alert alert = new Alert(type, message);
         alert.setHeaderText(header);
+        DialogStyler.style(alert);
         alert.showAndWait();
     }
 }

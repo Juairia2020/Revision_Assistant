@@ -17,23 +17,25 @@ public class QuizAttempt {
     private int totalQuestions;
     private int correctAnswers;
     private int scorePercent;
+    private int timeTakenSeconds;
 
     public QuizAttempt() {
     }
 
     public QuizAttempt(int subjectId, Integer topicId, LocalDate attemptDate,
-                        int totalQuestions, int correctAnswers, int scorePercent) {
+                       int totalQuestions, int correctAnswers, int scorePercent, int timeTakenSeconds) {
         this.subjectId = subjectId;
         this.topicId = topicId;
         this.attemptDate = attemptDate;
         this.totalQuestions = totalQuestions;
         this.correctAnswers = correctAnswers;
         this.scorePercent = scorePercent;
+        this.timeTakenSeconds = timeTakenSeconds;
     }
 
     public QuizAttempt(int id, int subjectId, Integer topicId, LocalDate attemptDate,
-                        int totalQuestions, int correctAnswers, int scorePercent) {
-        this(subjectId, topicId, attemptDate, totalQuestions, correctAnswers, scorePercent);
+                       int totalQuestions, int correctAnswers, int scorePercent, int timeTakenSeconds) {
+        this(subjectId, topicId, attemptDate, totalQuestions, correctAnswers, scorePercent, timeTakenSeconds);
         this.id = id;
     }
 
@@ -91,6 +93,15 @@ public class QuizAttempt {
 
     public void setScorePercent(int scorePercent) {
         this.scorePercent = scorePercent;
+    }
+
+    /** How long the quiz took to complete, in seconds. Zero for attempts recorded before timing was tracked. */
+    public int getTimeTakenSeconds() {
+        return timeTakenSeconds;
+    }
+
+    public void setTimeTakenSeconds(int timeTakenSeconds) {
+        this.timeTakenSeconds = timeTakenSeconds;
     }
 
     @Override

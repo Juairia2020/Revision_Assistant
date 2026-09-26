@@ -4,11 +4,20 @@ import com.revisionassistant.model.StudySession;
 import com.revisionassistant.model.Subject;
 import com.revisionassistant.model.Topic;
 import com.revisionassistant.service.StudySessionService;
+import com.revisionassistant.util.DialogStyler;
 import com.revisionassistant.service.SubjectService;
 import com.revisionassistant.service.TopicService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.animation.FadeTransition;
+import javafx.geometry.Pos;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.util.Duration;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
@@ -90,16 +99,41 @@ public class StudySessionController {
             @Override protected void updateItem(StudySession session, boolean empty) {
                 super.updateItem(session, empty);
                 if (empty || session == null) { setGraphic(null); return; }
-                VBox card = new VBox(5); card.getStyleClass().add("session-card");
+                VBox card = new VBox(0); card.getStyleClass().add("mission-card");
                 Subject subject = subjectsById.get(session.getSubjectId());
                 Topic topic = session.getTopicId() == null ? null : topicsById.get(session.getTopicId());
-                Label date = new Label(session.getDate() + "  •  " + session.getDurationMinutes() + " min"); date.getStyleClass().add("session-date");
-                Label title = new Label(subject == null ? "Study session" : subject.getName() + (topic == null ? "" : "  •  " + topic.getName())); title.getStyleClass().add("card-title");
+                String color = subjectColor(subject);
+
+                HBox row = new HBox(12); row.setAlignment(Pos.CENTER_LEFT);
+                StackPane node = new StackPane(); node.setMinSize(32,32); node.setPrefSize(32,32);
+                Circle bg = new Circle(16); bg.setStyle("-fx-fill: " + color + "; -fx-effect: dropshadow(gaussian, " + color + ", 10, 0.35, 0, 0);");
+                Label icon = new Label("✓"); icon.setStyle("-fx-text-fill:white; -fx-font-size:13px; -fx-font-weight:bold;"); node.getChildren().addAll(bg, icon);
+
+                VBox info = new VBox(5); info.setAlignment(Pos.CENTER_LEFT); HBox.setHgrow(info, javafx.scene.layout.Priority.ALWAYS);
+                Label title = new Label(subject == null ? "Study session" : subject.getName() + (topic == null ? "" : "  •  " + topic.getName())); title.getStyleClass().add("path-node-name-current");
+                Label date = new Label(session.getDate() + "  •  " + session.getDurationMinutes() + " min"); date.getStyleClass().add("row-meta");
+                HBox badges = new HBox(8); badges.setAlignment(Pos.CENTER_LEFT);
+                Label sessionBadge = new Label("Study Session"); sessionBadge.getStyleClass().add("path-badge-current");
+                Label duration = new Label(session.getDurationMinutes() + " min focused"); duration.getStyleClass().add("path-badge-upcoming");
+                badges.getChildren().addAll(sessionBadge, duration);
                 Label notes = new Label(session.getNotes() == null || session.getNotes().isBlank() ? "No notes" : session.getNotes()); notes.setWrapText(true); notes.getStyleClass().add("row-meta");
-                card.getChildren().addAll(date, title, notes); setGraphic(card);
+                info.getChildren().addAll(title, date, badges, notes);
+                row.getChildren().addAll(node, info); card.getChildren().add(row);
+                playCardEntrance(card);
+                setGraphic(card);
             }
         });
         sessionsList.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> { if (newValue != null) populateForm(newValue); });
+    }
+
+    private String subjectColor(Subject subject) {
+        String color = subject == null ? "#6C63F5" : subject.getColor();
+        try { Color.web(color); return color; } catch (Exception e) { return "#6C63F5"; }
+    }
+
+    private void playCardEntrance(VBox card) {
+        FadeTransition fade = new FadeTransition(Duration.millis(250), card);
+        fade.setFromValue(0); fade.setToValue(1); fade.play();
     }
 
     private void populateForm(StudySession session) {
@@ -162,6 +196,7 @@ public class StudySessionController {
 
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Delete this study session?");
         confirm.setHeaderText("Confirm delete");
+        DialogStyler.style(confirm);
         if (confirm.showAndWait().filter(response -> response == ButtonType.OK).isEmpty()) {
             return;
         }
@@ -252,6 +287,21 @@ public class StudySessionController {
     private void showAlert(Alert.AlertType type, String header, String message) {
         Alert alert = new Alert(type, message);
         alert.setHeaderText(header);
+        DialogStyler.style(alert);
         alert.showAndWait();
     }
+
+    private Circle createSubjectDot(Subject subject) {
+        Circle dot = new Circle(5);
+        String color = subject == null ? "#6C63F5" : subject.getColor();
+        try {
+            dot.setFill(Color.web(color));
+        } catch (Exception e) {
+            dot.setFill(Color.web("#6C63F5"));
+        }
+        return dot;
+    }
+
+
+
 }

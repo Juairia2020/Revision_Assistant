@@ -9,6 +9,7 @@
 <?import javafx.scene.control.Spinner?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
@@ -16,12 +17,17 @@
             fx:controller="com.revisionassistant.controller.StudySessionController">
     <top>
         <VBox spacing="10" styleClass="view-header" BorderPane.alignment="CENTER">
+            <HBox spacing="16" alignment="CENTER_LEFT" styleClass="view-toolbar">
+                <VBox spacing="2">
+                    <Label text="Study Sessions" styleClass="view-title"/>
+                    <Label text="Build your study streak by logging focused sessions." styleClass="page-subtitle"/>
+                </VBox>
+                <Region HBox.hgrow="ALWAYS"/>
+            </HBox>
             <padding>
                 <Insets top="16" right="16" bottom="10" left="16"/>
             </padding>
             <children>
-                <Label text="Study Sessions" styleClass="view-title"/>
-
                 <HBox spacing="10" alignment="CENTER_LEFT">
                     <children>
                         <ComboBox fx:id="subjectComboBox" promptText="Subject" prefWidth="160"/>

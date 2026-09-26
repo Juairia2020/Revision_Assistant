@@ -47,8 +47,12 @@ public class DashboardController {
     @FXML private Label continueSectionLabel;
     @FXML private Label continueTitleLabel;
     @FXML private Button continueButton;
+    @FXML private Label quoteTextLabel;
+    @FXML private Label quoteAuthorLabel;
+    @FXML private Label quoteStatusLabel;
 
     private final DashboardService dashboardService = new DashboardService();
+    private final com.revisionassistant.service.DailyQuoteService dailyQuoteService = new com.revisionassistant.service.DailyQuoteService();
     private MainController mainController;
     private ContinueItem continueItem;
 
@@ -74,6 +78,7 @@ public class DashboardController {
         refreshSubjectProgress();
         refreshActivity();
         refreshContinue();
+        loadDailyQuote();
         animateEntrance();
     }
 
@@ -151,6 +156,33 @@ public class DashboardController {
             continueTitleLabel.setText("Not available right now");
             continueButton.setText("Continue →");
         }
+    }
+
+
+    private void loadDailyQuote() {
+        if (quoteStatusLabel == null) return;
+        quoteStatusLabel.setText("Loading today's quote…");
+        javafx.concurrent.Task<com.revisionassistant.service.DailyQuoteService.Quote> task =
+                new javafx.concurrent.Task<>() {
+                    @Override
+                    protected com.revisionassistant.service.DailyQuoteService.Quote call() throws Exception {
+                        return dailyQuoteService.fetchToday();
+                    }
+                };
+        task.setOnSucceeded(e -> {
+            var quote = task.getValue();
+            quoteTextLabel.setText("“" + quote.text() + "”");
+            quoteAuthorLabel.setText("— " + quote.author());
+            quoteStatusLabel.setText("Fetched from the daily quote API.");
+        });
+        task.setOnFailed(e -> {
+            quoteTextLabel.setText("“Small steps each day add up to meaningful progress.”");
+            quoteAuthorLabel.setText("— Revision Assistant");
+            quoteStatusLabel.setText("Offline fallback shown; the API response could not be loaded.");
+        });
+        Thread t = new Thread(task, "daily-quote-request");
+        t.setDaemon(true);
+        t.start();
     }
 
     private void animateEntrance() {
@@ -304,6 +336,7 @@ public class DashboardController {
             case "exams" -> mainController.showExamsFromDashboard();
             case "flashcards" -> mainController.showFlashcardsFromDashboard();
             case "quiz" -> mainController.showQuizFromDashboard();
+            case "path" -> mainController.showStudyPathFromDashboard();
             default -> mainController.showDashboard();
         }
     }

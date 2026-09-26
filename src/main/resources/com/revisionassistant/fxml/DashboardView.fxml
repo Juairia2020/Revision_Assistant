@@ -57,49 +57,75 @@
 
                     <children>
 
-                        <VBox styleClass="stat-card stat-card-accent">
-                            <Label fx:id="overallProgressValue"
-                                   text="0%"
-                                   styleClass="stat-value"/>
-                            <Label text="Overall progress"
-                                   styleClass="stat-label"/>
-                        </VBox>
+                        <HBox styleClass="stat-card stat-card-accent">
+                            <Label text="◎" styleClass="stat-icon stat-icon-purple"/>
+                            <VBox alignment="CENTER_LEFT">
+                                <Label fx:id="overallProgressValue"
+                                       text="0%"
+                                       styleClass="stat-value"/>
+                                <Label text="Overall progress"
+                                       styleClass="stat-label"/>
+                            </VBox>
+                        </HBox>
 
-                        <VBox styleClass="stat-card">
-                            <Label fx:id="pendingTasksValue"
-                                   text="0"
-                                   styleClass="stat-value"/>
-                            <Label text="Tasks remaining"
-                                   styleClass="stat-label"/>
-                        </VBox>
+                        <HBox styleClass="stat-card">
+                            <Label text="✓" styleClass="stat-icon stat-icon-blue"/>
+                            <VBox alignment="CENTER_LEFT">
+                                <Label fx:id="pendingTasksValue"
+                                       text="0"
+                                       styleClass="stat-value"/>
+                                <Label text="Tasks remaining"
+                                       styleClass="stat-label"/>
+                            </VBox>
+                        </HBox>
 
-                        <VBox styleClass="stat-card">
-                            <Label fx:id="studyWeekValue"
-                                   text="0 min"
-                                   styleClass="stat-value"/>
-                            <Label text="Study time this week"
-                                   styleClass="stat-label"/>
-                        </VBox>
+                        <HBox styleClass="stat-card">
+                            <Label text="◷" styleClass="stat-icon stat-icon-orange"/>
+                            <VBox alignment="CENTER_LEFT">
+                                <Label fx:id="studyWeekValue"
+                                       text="0 min"
+                                       styleClass="stat-value"/>
+                                <Label text="Study time this week"
+                                       styleClass="stat-label"/>
+                            </VBox>
+                        </HBox>
 
-                        <VBox styleClass="stat-card">
-                            <Label fx:id="upcomingExamCountValue"
-                                   text="0"
-                                   styleClass="stat-value"/>
-                            <Label text="Upcoming exams"
-                                   styleClass="stat-label"/>
-                        </VBox>
+                        <HBox styleClass="stat-card">
+                            <Label text="□" styleClass="stat-icon stat-icon-pink"/>
+                            <VBox alignment="CENTER_LEFT">
+                                <Label fx:id="upcomingExamCountValue"
+                                       text="0"
+                                       styleClass="stat-value"/>
+                                <Label text="Upcoming exams"
+                                       styleClass="stat-label"/>
+                            </VBox>
+                        </HBox>
 
-                        <VBox styleClass="stat-card">
-                            <Label fx:id="completedTopicsValue"
-                                   text="0"
-                                   styleClass="stat-value"/>
-                            <Label text="Completed topics"
-                                   styleClass="stat-label"/>
-                        </VBox>
+                        <HBox styleClass="stat-card">
+                            <Label text="◈" styleClass="stat-icon stat-icon-teal"/>
+                            <VBox alignment="CENTER_LEFT">
+                                <Label fx:id="completedTopicsValue"
+                                       text="0"
+                                       styleClass="stat-value"/>
+                                <Label text="Completed topics"
+                                       styleClass="stat-label"/>
+                            </VBox>
+                        </HBox>
 
                     </children>
                 </FlowPane>
 
+
+                <!-- Daily Quote: JSON HTTP response -> DTO -> JavaFX UI -->
+                <VBox spacing="8" styleClass="dashboard-section daily-quote-card">
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Daily Quote" styleClass="section-title"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="quoteStatusLabel" text="Loading…" styleClass="row-meta"/>
+                    </HBox>
+                    <Label fx:id="quoteTextLabel" text="“A quote will appear here.”" wrapText="true" styleClass="daily-quote-text"/>
+                    <Label fx:id="quoteAuthorLabel" text="— Revision Assistant" styleClass="daily-quote-author"/>
+                </VBox>
 
                 <!-- Progress + Upcoming Exams -->
                 <GridPane hgap="16" vgap="16">
@@ -227,7 +253,7 @@
                     </HBox>
 
 
-                    <StackPane fx:id="activityChartContainer"
+                    <StackPane 
                                minHeight="220"
                                prefHeight="260">
 
