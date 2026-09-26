@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.revisionassistant.controller.ResourcesController"
+      styleClass="view-root"
+      spacing="0">
+
+    <!-- Left: add resource form -->
+    <VBox spacing="14" styleClass="resource-form-panel" minWidth="280" maxWidth="320">
+        <padding><Insets top="20" right="16" bottom="20" left="16"/></padding>
+        <Label text="Add Resource" styleClass="view-title"/>
+        <TextField fx:id="titleField" promptText="Title *"/>
+        <TextField fx:id="urlField" promptText="URL *  (https://...)"/>
+        <TextField fx:id="descriptionField" promptText="Description (optional)"/>
+        <ComboBox fx:id="categoryCombo" maxWidth="Infinity"/>
+        <ComboBox fx:id="subjectCombo" maxWidth="Infinity" promptText="Subject (optional)"/>
+        <Button text="+ Add Resource" maxWidth="Infinity" styleClass="primary-button" onAction="#handleAddResource"/>
+        <Label fx:id="statusLabel" styleClass="row-meta" wrapText="true"/>
+    </VBox>
+
+    <Separator orientation="VERTICAL"/>
+
+    <!-- Right: list -->
+    <VBox VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" spacing="0">
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="view-toolbar">
+            <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
+            <Label text="My Resources" styleClass="view-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <ComboBox fx:id="filterSubjectCombo" prefWidth="160"/>
+            <ComboBox fx:id="filterCategoryCombo" prefWidth="160"/>
+            <Label fx:id="countLabel" styleClass="badge-accent"/>
+        </HBox>
+
+        <ScrollPane VBox.vgrow="ALWAYS" fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
+            <content>
+                <VBox spacing="10">
+                    <padding><Insets top="12" right="16" bottom="20" left="16"/></padding>
+                    <Label fx:id="emptyStateLabel"
+                           text="No resources added yet. Use the form on the left to save your first study link."
+                           styleClass="empty-state" wrapText="true" visible="true"/>
+                    <VBox fx:id="resourcesBox" spacing="10"/>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </VBox>
+</HBox>
