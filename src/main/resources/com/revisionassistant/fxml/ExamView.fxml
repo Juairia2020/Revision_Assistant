@@ -5,9 +5,8 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.Slider?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
@@ -50,17 +49,8 @@
         </VBox>
     </top>
     <center>
-        <TableView fx:id="examsTable" BorderPane.alignment="CENTER">
-            <columns>
-                <TableColumn fx:id="subjectColumn" text="Subject" prefWidth="130"/>
-                <TableColumn fx:id="titleColumn" text="Title" prefWidth="200"/>
-                <TableColumn fx:id="dateColumn" text="Date" prefWidth="110"/>
-                <TableColumn fx:id="daysRemainingColumn" text="Remaining" prefWidth="100"/>
-                <TableColumn fx:id="progressColumn" text="Prepared" prefWidth="90"/>
-            </columns>
-            <BorderPane.margin>
-                <Insets top="0" right="16" bottom="16" left="16"/>
-            </BorderPane.margin>
-        </TableView>
-    </center>
+        <ListView fx:id="examsList" BorderPane.alignment="CENTER" styleClass="feature-list">
+            <BorderPane.margin><Insets top="0" right="16" bottom="16" left="16"/></BorderPane.margin>
+        </ListView>
+</center>
 </BorderPane>

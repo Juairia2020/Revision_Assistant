@@ -4,7 +4,6 @@ import com.revisionassistant.model.Exam;
 import com.revisionassistant.model.Subject;
 import com.revisionassistant.service.ExamService;
 import com.revisionassistant.service.SubjectService;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -13,8 +12,10 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Slider;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 import javafx.scene.control.TextField;
 import javafx.util.StringConverter;
 
@@ -42,17 +43,7 @@ public class ExamController {
     private javafx.scene.control.Label progressValueLabel;
 
     @FXML
-    private TableView<Exam> examsTable;
-    @FXML
-    private TableColumn<Exam, String> subjectColumn;
-    @FXML
-    private TableColumn<Exam, String> titleColumn;
-    @FXML
-    private TableColumn<Exam, String> dateColumn;
-    @FXML
-    private TableColumn<Exam, String> daysRemainingColumn;
-    @FXML
-    private TableColumn<Exam, String> progressColumn;
+    private ListView<Exam> examsList;
 
     private final SubjectService subjectService = new SubjectService();
     private final ExamService examService = new ExamService();
@@ -85,38 +76,24 @@ public class ExamController {
     }
 
     private void setUpTable() {
-        subjectColumn.setCellValueFactory(data -> {
-            Subject subject = subjectsById.get(data.getValue().getSubjectId());
-            return new SimpleStringProperty(subject == null ? "—" : subject.getName());
-        });
-        titleColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getTitle()));
-        dateColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getExamDate().toString()));
-        daysRemainingColumn.setCellValueFactory(data -> {
-            long days = data.getValue().getDaysRemaining();
-            String text;
-            if (days < 0) {
-                text = "Past";
-            } else if (days == 0) {
-                text = "Today";
-            } else if (days == 1) {
-                text = "1 day";
-            } else {
-                text = days + " days";
+        examsList.setItems(exams);
+        examsList.setCellFactory(list -> new ListCell<>() {
+            @Override protected void updateItem(Exam exam, boolean empty) {
+                super.updateItem(exam, empty);
+                if (empty || exam == null) { setGraphic(null); return; }
+                VBox card = new VBox(6); card.getStyleClass().add("exam-card");
+                Label title = new Label(exam.getTitle()); title.getStyleClass().add("card-title");
+                Subject subject = subjectsById.get(exam.getSubjectId());
+                Label meta = new Label((subject == null ? "No subject" : subject.getName()) + "  •  " + exam.getExamDate()); meta.getStyleClass().add("row-meta");
+                long days = exam.getDaysRemaining();
+                Label daysLabel = new Label(days < 0 ? "Past" : days == 0 ? "Today" : days + " days remaining"); daysLabel.getStyleClass().add(days <= 3 ? "badge-warning" : "badge-accent");
+                javafx.scene.control.ProgressBar bar = new javafx.scene.control.ProgressBar(exam.getProgress()/100.0); bar.setMaxWidth(Double.MAX_VALUE);
+                Label progress = new Label(exam.getProgress() + "% prepared"); progress.getStyleClass().add("row-meta");
+                card.getChildren().addAll(title, meta, daysLabel, bar, progress); setGraphic(card);
             }
-            return new SimpleStringProperty(text);
         });
-        progressColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getProgress() + "%"));
-
-        examsTable.setItems(exams);
-        examsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue != null) {
-                subjectComboBox.setValue(subjectsById.get(newValue.getSubjectId()));
-                titleField.setText(newValue.getTitle());
-                examDatePicker.setValue(newValue.getExamDate());
-                progressSlider.setValue(newValue.getProgress());
-            }
+        examsList.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue != null) { subjectComboBox.setValue(subjectsById.get(newValue.getSubjectId())); titleField.setText(newValue.getTitle()); examDatePicker.setValue(newValue.getExamDate()); progressSlider.setValue(newValue.getProgress()); }
         });
     }
 
@@ -138,7 +115,7 @@ public class ExamController {
 
     @FXML
     private void handleEditExam() {
-        Exam selected = examsTable.getSelectionModel().getSelectedItem();
+        Exam selected = examsList.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "No exam selected", "Select an exam to edit first.");
             return;
@@ -158,7 +135,7 @@ public class ExamController {
 
     @FXML
     private void handleDeleteExam() {
-        Exam selected = examsTable.getSelectionModel().getSelectedItem();
+        Exam selected = examsList.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "No exam selected", "Select an exam to delete first.");
             return;
@@ -211,7 +188,7 @@ public class ExamController {
         titleField.clear();
         examDatePicker.setValue(null);
         progressSlider.setValue(0);
-        examsTable.getSelectionModel().clearSelection();
+        examsList.getSelectionModel().clearSelection();
     }
 
     private void showAlert(Alert.AlertType type, String header, String message) {

@@ -1,18 +1,19 @@
 package com.revisionassistant;
 
 import com.revisionassistant.database.DatabaseManager;
+import com.revisionassistant.navigation.AppNavigator;
+import com.revisionassistant.service.UserService;
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
 
 import java.sql.SQLException;
 
 /**
- * Application entry point. Makes sure the SQLite database and its
- * schema exist, then loads the main FXML view.
+ * Application entry point. Database setup happens first; if a valid
+ * "remember me" session was left on this device, it is restored
+ * automatically and the application opens straight to the main workspace -
+ * otherwise every new application session starts at the local login screen.
  */
 public class Main extends Application {
 
@@ -26,18 +27,19 @@ public class Main extends Application {
         }
 
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/revisionassistant/fxml/MainView.fxml"));
-            Parent root = loader.load();
+            boolean restoredSession = false;
+            try {
+                restoredSession = new UserService().tryAutoLogin() != null;
+            } catch (SQLException e) {
+                // A remembered session simply isn't restored if it can't be checked -
+                // the login screen below is always a safe fallback.
+            }
 
-            Scene scene = new Scene(root, 960, 620);
-            scene.getStylesheets().add(
-                    getClass().getResource("/com/revisionassistant/css/style.css").toExternalForm());
-
-            primaryStage.setTitle("Revision Assistant");
-            primaryStage.setScene(scene);
-            primaryStage.setMinWidth(760);
-            primaryStage.setMinHeight(480);
-            primaryStage.show();
+            if (restoredSession) {
+                AppNavigator.showMain(primaryStage);
+            } else {
+                AppNavigator.showLogin(primaryStage);
+            }
         } catch (Exception e) {
             showFatalError("Could not start the application:\n" + e.getMessage());
         }

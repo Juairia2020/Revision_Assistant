@@ -7,21 +7,11 @@ import com.revisionassistant.model.Topic;
 import com.revisionassistant.service.SubjectService;
 import com.revisionassistant.service.TaskService;
 import com.revisionassistant.service.TopicService;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
-import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
 import java.sql.SQLException;
@@ -49,6 +39,10 @@ public class TaskController {
     private ComboBox<Priority> priorityComboBox;
     @FXML
     private DatePicker deadlinePicker;
+    @FXML
+    private Button addTaskButton;
+    @FXML
+    private Label formStatusLabel;
 
     @FXML
     private ComboBox<Subject> filterSubjectComboBox;
@@ -58,21 +52,7 @@ public class TaskController {
     private ComboBox<Priority> filterPriorityComboBox;
 
     @FXML
-    private TableView<Task> tasksTable;
-    @FXML
-    private TableColumn<Task, String> titleColumn;
-    @FXML
-    private TableColumn<Task, String> subjectColumn;
-    @FXML
-    private TableColumn<Task, String> topicColumn;
-    @FXML
-    private TableColumn<Task, String> estimatedColumn;
-    @FXML
-    private TableColumn<Task, String> priorityColumn;
-    @FXML
-    private TableColumn<Task, String> deadlineColumn;
-    @FXML
-    private TableColumn<Task, Boolean> completedColumn;
+    private ListView<Task> tasksList;
 
     private final SubjectService subjectService = new SubjectService();
     private final TopicService topicService = new TopicService();
@@ -104,8 +84,19 @@ public class TaskController {
         estimatedMinutesSpinner.setValueFactory(
                 new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 600, 30, 5));
         estimatedMinutesSpinner.setEditable(true);
+        estimatedMinutesSpinner.getEditor().setPromptText("Minutes");
 
         deadlinePicker.setValue(null);
+
+        if (addTaskButton != null) {
+            addTaskButton.disableProperty().bind(subjectComboBox.valueProperty().isNull()
+                    .or(titleField.textProperty().isEmpty()));
+        }
+        titleField.textProperty().addListener((obs, oldValue, newValue) -> {
+            if (formStatusLabel != null && newValue != null && !newValue.trim().isEmpty()) {
+                formStatusLabel.setText("");
+            }
+        });
     }
 
     private void setUpFilterControls() {
@@ -158,52 +149,22 @@ public class TaskController {
     }
 
     private void setUpTable() {
-        titleColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getTitle()));
-
-        subjectColumn.setCellValueFactory(data -> {
-            Subject subject = subjectsById.get(data.getValue().getSubjectId());
-            return new SimpleStringProperty(subject == null ? "—" : subject.getName());
-        });
-
-        topicColumn.setCellValueFactory(data -> {
-            Integer topicId = data.getValue().getTopicId();
-            Topic topic = topicId == null ? null : topicsById.get(topicId);
-            return new SimpleStringProperty(topic == null ? "—" : topic.getName());
-        });
-
-        estimatedColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getEstimatedMinutes() + " min"));
-
-        priorityColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getPriority().getLabel()));
-
-        deadlineColumn.setCellValueFactory(data -> {
-            LocalDate deadline = data.getValue().getDeadline();
-            return new SimpleStringProperty(deadline == null ? "No deadline" : deadline.toString());
-        });
-
-        completedColumn.setCellValueFactory(data -> {
-            Task task = data.getValue();
-            SimpleBooleanProperty property = new SimpleBooleanProperty(task.isCompleted());
-            property.addListener((obs, oldVal, newVal) -> {
-                try {
-                    taskService.setCompleted(task.getId(), newVal);
-                    task.setCompleted(newVal);
-                } catch (SQLException e) {
-                    showAlert(Alert.AlertType.ERROR, "Database error", e.getMessage());
-                }
-            });
-            return property;
-        });
-        completedColumn.setCellFactory(CheckBoxTableCell.forTableColumn(completedColumn));
-
-        tasksTable.setItems(tasks);
-        tasksTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue != null) {
-                populateForm(newValue);
+        tasksList.setItems(tasks);
+        tasksList.setCellFactory(list -> new ListCell<>() {
+            @Override protected void updateItem(Task task, boolean empty) {
+                super.updateItem(task, empty);
+                if (empty || task == null) { setGraphic(null); return; }
+                VBox card = new VBox(6); card.getStyleClass().add(task.isCompleted() ? "task-card completed" : task.isOverdue() ? "task-card overdue" : "task-card");
+                Label title = new Label(task.getTitle()); title.getStyleClass().add("card-title");
+                Subject subject = subjectsById.get(task.getSubjectId());
+                Topic topic = task.getTopicId() == null ? null : topicsById.get(task.getTopicId());
+                Label meta = new Label((subject == null ? "No subject" : subject.getName()) + (topic == null ? "" : "  •  " + topic.getName()) + "  •  " + task.getEstimatedMinutes() + " min"); meta.getStyleClass().add("row-meta");
+                Label state = new Label(task.isCompleted() ? "Completed" : task.isOverdue() ? "Overdue" : task.getPriority().getLabel()); state.getStyleClass().add(task.isCompleted() ? "badge-success" : task.isOverdue() ? "badge-danger" : "badge-accent");
+                Label deadline = new Label(task.getDeadline() == null ? "No deadline" : "Due " + task.getDeadline()); deadline.getStyleClass().add("row-meta");
+                card.getChildren().addAll(title, meta, state, deadline); setGraphic(card);
             }
         });
+        tasksList.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> { if (newValue != null) populateForm(newValue); });
     }
 
     private void populateForm(Task task) {
@@ -221,24 +182,66 @@ public class TaskController {
     private void handleAddTask() {
         try {
             Subject subject = subjectComboBox.getValue();
+            if (subject == null) {
+                showFormMessage("Choose a subject before adding a task.", true);
+                return;
+            }
+            String title = titleField.getText() == null ? "" : titleField.getText().trim();
+            if (title.isEmpty()) {
+                showFormMessage("Give the task a short title first.", true);
+                titleField.requestFocus();
+                return;
+            }
+
+            commitSpinnerValue();
+            Integer minutes = estimatedMinutesSpinner.getValue();
+            if (minutes == null || minutes < 0) {
+                showFormMessage("Estimated time must be 0 minutes or more.", true);
+                return;
+            }
+
             Topic topic = topicComboBox.getValue();
             taskService.addTask(
-                    subject == null ? 0 : subject.getId(),
+                    subject.getId(),
                     topic == null ? null : topic.getId(),
-                    titleField.getText(),
-                    estimatedMinutesSpinner.getValue(),
+                    title,
+                    minutes,
                     priorityComboBox.getValue(),
                     deadlinePicker.getValue());
+
+            showFormMessage("Task added successfully.", false);
             clearForm();
             refreshTasks();
+            titleField.requestFocus();
+        } catch (NumberFormatException e) {
+            showFormMessage("Estimated time must be a whole number.", true);
         } catch (IllegalArgumentException | SQLException e) {
-            showAlert(Alert.AlertType.ERROR, "Could not add task", e.getMessage());
+            showFormMessage(e.getMessage() == null ? "The task could not be added." : e.getMessage(), true);
+        }
+    }
+
+    private void commitSpinnerValue() {
+        if (estimatedMinutesSpinner.isEditable()) {
+            String text = estimatedMinutesSpinner.getEditor().getText();
+            if (text != null && !text.trim().isEmpty()) {
+                estimatedMinutesSpinner.getValueFactory().setValue(Integer.parseInt(text.trim()));
+            }
+        }
+    }
+
+    private void showFormMessage(String message, boolean error) {
+        if (formStatusLabel != null) {
+            formStatusLabel.setText(message == null ? "" : message);
+            formStatusLabel.getStyleClass().removeAll("success", "error");
+            formStatusLabel.getStyleClass().add(error ? "error" : "success");
+        } else if (error) {
+            showAlert(Alert.AlertType.ERROR, "Could not add task", message);
         }
     }
 
     @FXML
     private void handleEditTask() {
-        Task selected = tasksTable.getSelectionModel().getSelectedItem();
+        Task selected = tasksList.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "No task selected", "Select a task to edit first.");
             return;
@@ -261,7 +264,7 @@ public class TaskController {
 
     @FXML
     private void handleDeleteTask() {
-        Task selected = tasksTable.getSelectionModel().getSelectedItem();
+        Task selected = tasksList.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "No task selected", "Select a task to delete first.");
             return;
@@ -371,7 +374,7 @@ public class TaskController {
         estimatedMinutesSpinner.getValueFactory().setValue(30);
         priorityComboBox.setValue(Priority.MEDIUM);
         deadlinePicker.setValue(null);
-        tasksTable.getSelectionModel().clearSelection();
+        tasksList.getSelectionModel().clearSelection();
     }
 
     private StringConverter<Subject> subjectConverter(String nullLabel) {

@@ -1,133 +1,22 @@
 package com.revisionassistant.dao;
-
 import com.revisionassistant.database.DatabaseManager;
-import com.revisionassistant.model.StudySession;
+import com.revisionassistant.session.CurrentUser;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
-import java.time.LocalDate;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import com.revisionassistant.model.StudySession;
+import java.sql.Types;
+import java.time.LocalDate;
 
-/**
- * Direct SQL access for the study_sessions table. No validation or
- * business rules live here - callers (the service layer) are
- * responsible for that. Every statement is a PreparedStatement.
- */
 public class StudySessionDAO {
-
-    private static final String COLUMNS =
-            "id, subject_id, topic_id, session_date, duration_minutes, notes";
-
-    public StudySession insert(StudySession session) throws SQLException {
-        String sql = "INSERT INTO study_sessions (subject_id, topic_id, session_date, "
-                + "duration_minutes, notes) VALUES (?, ?, ?, ?, ?)";
-
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-            bindSession(statement, session);
-            statement.executeUpdate();
-
-            try (ResultSet keys = statement.getGeneratedKeys()) {
-                if (keys.next()) {
-                    session.setId(keys.getInt(1));
-                }
-            }
-        }
-        return session;
-    }
-
-    public List<StudySession> findAll() throws SQLException {
-        String sql = "SELECT " + COLUMNS + " FROM study_sessions ORDER BY session_date DESC, id DESC";
-        List<StudySession> sessions = new ArrayList<>();
-
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-
-            while (resultSet.next()) {
-                sessions.add(mapRow(resultSet));
-            }
-        }
-        return sessions;
-    }
-
-    public void update(StudySession session) throws SQLException {
-        String sql = "UPDATE study_sessions SET subject_id = ?, topic_id = ?, session_date = ?, "
-                + "duration_minutes = ?, notes = ? WHERE id = ?";
-
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            bindSession(statement, session);
-            statement.setInt(6, session.getId());
-            statement.executeUpdate();
-        }
-    }
-
-    public void delete(int id) throws SQLException {
-        String sql = "DELETE FROM study_sessions WHERE id = ?";
-
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setInt(1, id);
-            statement.executeUpdate();
-        }
-    }
-
-    /** Used by the service layer to decide whether a subject/topic is safe to delete. */
-    public int countBySubjectId(int subjectId) throws SQLException {
-        return countWhere("subject_id = ?", subjectId);
-    }
-
-    public int countByTopicId(int topicId) throws SQLException {
-        return countWhere("topic_id = ?", topicId);
-    }
-
-    private int countWhere(String whereClause, int id) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM study_sessions WHERE " + whereClause;
-        try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setInt(1, id);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getInt(1);
-                }
-            }
-        }
-        return 0;
-    }
-
-    private void bindSession(PreparedStatement statement, StudySession session) throws SQLException {
-        statement.setInt(1, session.getSubjectId());
-        if (session.getTopicId() == null) {
-            statement.setNull(2, Types.INTEGER);
-        } else {
-            statement.setInt(2, session.getTopicId());
-        }
-        statement.setString(3, session.getDate().toString());
-        statement.setInt(4, session.getDurationMinutes());
-        statement.setString(5, session.getNotes());
-    }
-
-    private StudySession mapRow(ResultSet resultSet) throws SQLException {
-        int topicIdValue = resultSet.getInt("topic_id");
-        Integer topicId = resultSet.wasNull() ? null : topicIdValue;
-
-        return new StudySession(
-                resultSet.getInt("id"),
-                resultSet.getInt("subject_id"),
-                topicId,
-                LocalDate.parse(resultSet.getString("session_date")),
-                resultSet.getInt("duration_minutes"),
-                resultSet.getString("notes")
-        );
-    }
+    private static final String COLUMNS="id,subject_id,topic_id,session_date,duration_minutes,notes";
+    public StudySession insert(StudySession x)throws SQLException{String sql="INSERT INTO study_sessions(user_id,subject_id,topic_id,session_date,duration_minutes,notes) VALUES(?,?,?,?,?,?)";try(Connection c=DatabaseManager.getConnection();PreparedStatement s=c.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS)){bind(s,x,2);s.setInt(1,CurrentUser.get().getId());s.executeUpdate();try(ResultSet k=s.getGeneratedKeys()){if(k.next())x.setId(k.getInt(1));}}return x;}
+    public List<StudySession> findAll()throws SQLException{String sql="SELECT "+COLUMNS+" FROM study_sessions WHERE user_id=? ORDER BY session_date DESC,id DESC";List<StudySession> out=new ArrayList<>();try(Connection c=DatabaseManager.getConnection();PreparedStatement s=c.prepareStatement(sql)){s.setInt(1,CurrentUser.get().getId());try(ResultSet r=s.executeQuery()){while(r.next())out.add(mapRow(r));}}return out;}
+    public void update(StudySession x)throws SQLException{String sql="UPDATE study_sessions SET subject_id=?,topic_id=?,session_date=?,duration_minutes=?,notes=? WHERE id=? AND user_id=?";try(Connection c=DatabaseManager.getConnection();PreparedStatement s=c.prepareStatement(sql)){bind(s,x,1);s.setInt(6,x.getId());s.setInt(7,CurrentUser.get().getId());s.executeUpdate();}}
+    public void delete(int id)throws SQLException{String sql="DELETE FROM study_sessions WHERE id=? AND user_id=?";try(Connection c=DatabaseManager.getConnection();PreparedStatement s=c.prepareStatement(sql)){s.setInt(1,id);s.setInt(2,CurrentUser.get().getId());s.executeUpdate();}}
+    public int countBySubjectId(int id)throws SQLException{return count("subject_id=?",id);} public int countByTopicId(int id)throws SQLException{return count("topic_id=?",id);}
+    private int count(String clause,int id)throws SQLException{String sql="SELECT COUNT(*) FROM study_sessions WHERE "+clause+" AND user_id=?";try(Connection c=DatabaseManager.getConnection();PreparedStatement s=c.prepareStatement(sql)){s.setInt(1,id);s.setInt(2,CurrentUser.get().getId());try(ResultSet r=s.executeQuery()){if(r.next())return r.getInt(1);}}return 0;}
+    private void bind(PreparedStatement s,StudySession x,int o)throws SQLException{s.setInt(o,x.getSubjectId());if(x.getTopicId()==null)s.setNull(o+1,Types.INTEGER);else s.setInt(o+1,x.getTopicId());s.setString(o+2,x.getDate().toString());s.setInt(o+3,x.getDurationMinutes());s.setString(o+4,x.getNotes());}
+    private StudySession mapRow(ResultSet r)throws SQLException{int tv=r.getInt("topic_id");Integer topic=r.wasNull()?null:tv;return new StudySession(r.getInt("id"),r.getInt("subject_id"),topic,LocalDate.parse(r.getString("session_date")),r.getInt("duration_minutes"),r.getString("notes"));}
 }

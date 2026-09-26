@@ -6,7 +6,6 @@ import com.revisionassistant.model.Topic;
 import com.revisionassistant.service.StudySessionService;
 import com.revisionassistant.service.SubjectService;
 import com.revisionassistant.service.TopicService;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -16,8 +15,10 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 import javafx.scene.control.TextField;
 import javafx.util.StringConverter;
 
@@ -46,17 +47,7 @@ public class StudySessionController {
     private TextField notesField;
 
     @FXML
-    private TableView<StudySession> sessionsTable;
-    @FXML
-    private TableColumn<StudySession, String> subjectColumn;
-    @FXML
-    private TableColumn<StudySession, String> topicColumn;
-    @FXML
-    private TableColumn<StudySession, String> dateColumn;
-    @FXML
-    private TableColumn<StudySession, String> durationColumn;
-    @FXML
-    private TableColumn<StudySession, String> notesColumn;
+    private ListView<StudySession> sessionsList;
 
     private final SubjectService subjectService = new SubjectService();
     private final TopicService topicService = new TopicService();
@@ -94,30 +85,21 @@ public class StudySessionController {
     }
 
     private void setUpTable() {
-        subjectColumn.setCellValueFactory(data -> {
-            Subject subject = subjectsById.get(data.getValue().getSubjectId());
-            return new SimpleStringProperty(subject == null ? "—" : subject.getName());
-        });
-        topicColumn.setCellValueFactory(data -> {
-            Integer topicId = data.getValue().getTopicId();
-            Topic topic = topicId == null ? null : topicsById.get(topicId);
-            return new SimpleStringProperty(topic == null ? "—" : topic.getName());
-        });
-        dateColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getDate().toString()));
-        durationColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getDurationMinutes() + " min"));
-        notesColumn.setCellValueFactory(data -> {
-            String notes = data.getValue().getNotes();
-            return new SimpleStringProperty(notes == null || notes.isEmpty() ? "—" : notes);
-        });
-
-        sessionsTable.setItems(sessions);
-        sessionsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue != null) {
-                populateForm(newValue);
+        sessionsList.setItems(sessions);
+        sessionsList.setCellFactory(list -> new ListCell<>() {
+            @Override protected void updateItem(StudySession session, boolean empty) {
+                super.updateItem(session, empty);
+                if (empty || session == null) { setGraphic(null); return; }
+                VBox card = new VBox(5); card.getStyleClass().add("session-card");
+                Subject subject = subjectsById.get(session.getSubjectId());
+                Topic topic = session.getTopicId() == null ? null : topicsById.get(session.getTopicId());
+                Label date = new Label(session.getDate() + "  •  " + session.getDurationMinutes() + " min"); date.getStyleClass().add("session-date");
+                Label title = new Label(subject == null ? "Study session" : subject.getName() + (topic == null ? "" : "  •  " + topic.getName())); title.getStyleClass().add("card-title");
+                Label notes = new Label(session.getNotes() == null || session.getNotes().isBlank() ? "No notes" : session.getNotes()); notes.setWrapText(true); notes.getStyleClass().add("row-meta");
+                card.getChildren().addAll(date, title, notes); setGraphic(card);
             }
         });
+        sessionsList.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> { if (newValue != null) populateForm(newValue); });
     }
 
     private void populateForm(StudySession session) {
@@ -150,7 +132,7 @@ public class StudySessionController {
 
     @FXML
     private void handleEditSession() {
-        StudySession selected = sessionsTable.getSelectionModel().getSelectedItem();
+        StudySession selected = sessionsList.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "No session selected", "Select a session to edit first.");
             return;
@@ -172,7 +154,7 @@ public class StudySessionController {
 
     @FXML
     private void handleDeleteSession() {
-        StudySession selected = sessionsTable.getSelectionModel().getSelectedItem();
+        StudySession selected = sessionsList.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "No session selected", "Select a session to delete first.");
             return;
@@ -264,7 +246,7 @@ public class StudySessionController {
         sessionDatePicker.setValue(LocalDate.now());
         durationSpinner.getValueFactory().setValue(30);
         notesField.clear();
-        sessionsTable.getSelectionModel().clearSelection();
+        sessionsList.getSelectionModel().clearSelection();
     }
 
     private void showAlert(Alert.AlertType type, String header, String message) {

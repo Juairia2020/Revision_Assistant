@@ -7,10 +7,9 @@
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
@@ -85,17 +84,13 @@
                                 </VBox>
                             </top>
                             <center>
-                                <TableView fx:id="questionsTable" BorderPane.alignment="CENTER">
-                                    <columns>
-                                        <TableColumn fx:id="questionColumn" text="Question" prefWidth="280"/>
-                                        <TableColumn fx:id="questionSubjectColumn" text="Subject" prefWidth="110"/>
-                                        <TableColumn fx:id="questionTopicColumn" text="Topic" prefWidth="110"/>
-                                        <TableColumn fx:id="correctColumn" text="Correct" prefWidth="70"/>
-                                    </columns>
-                                    <BorderPane.margin>
-                                        <Insets top="0" right="16" bottom="16" left="16"/>
-                                    </BorderPane.margin>
-                                </TableView>
+                                <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" styleClass="dashboard-scroll">
+                                    <content>
+                                        <FlowPane fx:id="questionCardsPane" hgap="14" vgap="14" prefWrapLength="760" styleClass="card-library">
+                                            <padding><Insets top="0" right="16" bottom="20" left="16"/></padding>
+                                        </FlowPane>
+                                    </content>
+                                </ScrollPane>
                             </center>
                         </BorderPane>
                     </content>
@@ -134,16 +129,11 @@
                                                 <Button fx:id="submitQuizButton" text="Submit Quiz" onAction="#handleSubmitQuiz" styleClass="primary-button"/>
 
                                                 <Separator/>
-
-                                                <Label text="Recent Attempts" styleClass="section-title"/>
-                                                <TableView fx:id="historyTable" prefHeight="220">
-                                                    <columns>
-                                                        <TableColumn fx:id="historyDateColumn" text="Date" prefWidth="100"/>
-                                                        <TableColumn fx:id="historySubjectColumn" text="Subject" prefWidth="130"/>
-                                                        <TableColumn fx:id="historyTopicColumn" text="Topic" prefWidth="130"/>
-                                                        <TableColumn fx:id="historyScoreColumn" text="Score" prefWidth="140"/>
-                                                    </columns>
-                                                </TableView>
+                                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                                    <Label text="Recent Attempts" styleClass="section-title" HBox.hgrow="ALWAYS"/>
+                                                    <Label text="Your quiz history" styleClass="row-meta"/>
+                                                </HBox>
+                                                <VBox fx:id="historyBox" spacing="8"/>
                                             </children>
                                         </VBox>
                                     </content>
