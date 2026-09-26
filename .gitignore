@@ -7,3 +7,6 @@ target/
 out/
 .DS_Store
 
+# Local "remember me" login session (Milestone: persistent login) - device-specific, never commit
+remember_me.token
+

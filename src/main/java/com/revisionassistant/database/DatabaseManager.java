@@ -178,6 +178,18 @@ public final class DatabaseManager {
                 "    onboarding_completed INTEGER NOT NULL DEFAULT 0" +
                 ");";
 
+        // --- Persistent "remember me" login sessions ----------------------
+
+        String createRememberTokensTable =
+                "CREATE TABLE IF NOT EXISTS remember_tokens (" +
+                "    id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "    user_id INTEGER NOT NULL," +
+                "    selector TEXT NOT NULL UNIQUE," +
+                "    validator_hash TEXT NOT NULL," +
+                "    expires_at TEXT NOT NULL," +
+                "    FOREIGN KEY(user_id) REFERENCES users(id)" +
+                ")";
+
         try (Connection connection = getConnection();
              Statement statement = connection.createStatement()) {
             statement.execute(createSubjectsTable);
@@ -191,6 +203,7 @@ public final class DatabaseManager {
             statement.execute(createQuizAttemptAnswersTable);
             statement.execute(createTopicDependenciesTable);
             statement.execute(createUsersTable);
+            statement.execute(createRememberTokensTable);
             migrateUserOnboardingState(statement);
             migrateStudyDataOwnership(statement);
         }

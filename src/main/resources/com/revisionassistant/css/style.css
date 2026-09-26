@@ -43,18 +43,39 @@
 }
 
 .sidebar {
-    -fx-background-color: linear-gradient(to bottom, #241941, #3B2A72 55%, #5B3FA8);
-    -fx-border-color: #33275F;
+    -fx-background-color: linear-gradient(to bottom, #241941, #2E2159 55%, #362868);
+    -fx-border-color: rgba(255,255,255,0.08);
     -fx-border-width: 0 1 0 0;
 }
 
+.sidebar-scroll,
+.sidebar-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.sidebar-scroll .scroll-bar:vertical {
+    -fx-pref-width: 8;
+    -fx-background-color: transparent;
+}
+
+.sidebar-scroll .scroll-bar:vertical .thumb {
+    -fx-background-color: rgba(255,255,255,0.16);
+    -fx-background-radius: 6px;
+}
+
+.sidebar-footer {
+    -fx-background-color: rgba(0,0,0,0.12);
+}
+
 .brand-block {
-    -fx-padding: 2 8 2 8;
+    -fx-background-color: rgba(255,255,255,0.05);
+    -fx-border-color: transparent transparent rgba(255,255,255,0.08) transparent;
+    -fx-border-width: 0 0 1 0;
 }
 
 .brand-mark,
 .profile-mark {
-    -fx-background-color: linear-gradient(to bottom right, #FF6F91, #6C4CF0);
+    -fx-background-color: linear-gradient(to bottom right, #8F6BFF, #6C4CF0);
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-font-size: 12px;
@@ -110,14 +131,14 @@
 }
 
 .sidebar-button-active {
-    -fx-background-color: linear-gradient(to right, #FF6F91, #6C4CF0);
+    -fx-background-color: linear-gradient(to right, #7C5CF5, #6C4CF0);
     -fx-text-fill: white;
     -fx-font-weight: bold;
-    -fx-effect: dropshadow(gaussian, rgba(255,111,145,0.35), 10, 0.15, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(108,76,240,0.45), 10, 0.15, 0, 2);
 }
 
 .sidebar-button-active:hover {
-    -fx-background-color: linear-gradient(to right, #F0577F, #5A3AD9);
+    -fx-background-color: linear-gradient(to right, #8F6BFF, #5A3AD9);
 }
 
 .sidebar-separator .line {
@@ -147,9 +168,13 @@
 /* ---------- Header ---------- */
 
 .top-bar {
-    -fx-background-color: rgba(255,255,255,0.97);
-    -fx-border-color: -ra-border;
+    /* Frosted-glass strip: a translucent white wash over the gradient
+       content area behind it, plus a soft top highlight, instead of a flat
+       opaque bar. */
+    -fx-background-color: linear-gradient(to bottom, rgba(255,255,255,0.88), rgba(255,255,255,0.94));
+    -fx-border-color: transparent transparent -ra-border transparent;
     -fx-border-width: 0 0 1 0;
+    -fx-effect: dropshadow(gaussian, rgba(76,53,150,0.06), 10, 0.05, 0, 2);
 }
 
 .page-title {
@@ -217,6 +242,8 @@
     -fx-padding: 15 16 13 16;
     -fx-spacing: 4;
     -fx-min-height: 78px;
+    -fx-min-width: 168px;
+    -fx-pref-width: 210px;
 }
 
 .stat-value {
@@ -519,7 +546,7 @@
 }
 
 .subject-progress-bar > .bar {
-    -fx-background-color: linear-gradient(to right, #6C4CF0, #FF6F91);
+    -fx-background-color: linear-gradient(to right, #6C4CF0, #17B8A6);
     -fx-background-insets: 0;
     -fx-background-radius: 5px;
 }
@@ -575,11 +602,11 @@
     -fx-border-color: -ra-border;
     -fx-border-radius: 16px;
     -fx-background-radius: 16px;
-    -fx-effect: dropshadow(gaussian, rgba(63,49,120,0.16), 24, 0.12, 0, 8);
+    -fx-effect: dropshadow(gaussian, rgba(63,49,120,0.16), 26, 0.12, 0, 8);
 }
 
 .auth-brand-mark {
-    -fx-background-color: linear-gradient(to bottom right, #FF6F91, #6C4CF0);
+    -fx-background-color: linear-gradient(to bottom right, #8F6BFF, #6C4CF0);
     -fx-text-fill: white;
     -fx-font-size: 15px;
     -fx-font-weight: bold;
@@ -634,7 +661,35 @@
 }
 
 .auth-submit {
-    -fx-padding: 10 14 10 14;
+    -fx-padding: 13 18 13 18;
+    -fx-font-size: 14px;
+    -fx-background-radius: 10px;
+}
+
+.auth-submit:hover {
+    -fx-scale-x: 1.01;
+    -fx-scale-y: 1.01;
+}
+
+.auth-remember-checkbox {
+    -fx-text-fill: -ra-text-secondary;
+    -fx-font-size: 12px;
+}
+
+.auth-remember-checkbox .box {
+    -fx-background-color: -ra-surface;
+    -fx-border-color: -ra-border-strong;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}
+
+.auth-remember-checkbox:selected .box {
+    -fx-background-color: -ra-accent;
+    -fx-border-color: -ra-accent;
+}
+
+.auth-remember-checkbox:selected .mark {
+    -fx-background-color: white;
 }
 
 .sidebar-logout {
@@ -685,18 +740,26 @@
     -fx-min-height: 132px;
     -fx-pref-width: 132px;
     -fx-pref-height: 132px;
-    -fx-background-color: -ra-accent-soft;
-    -fx-background-radius: 100px;
-    -fx-border-color: #E1D3FA;
-    -fx-border-width: 10px;
-    -fx-border-radius: 100px;
+    -fx-max-width: 132px;
+    -fx-max-height: 132px;
 }
 
-.progress-ring-indicator {
-    -fx-pref-width: 112px;
-    -fx-pref-height: 112px;
-    -fx-progress-color: -ra-accent;
-    -fx-padding: 0;
+/* A flat, two-layer ring (a soft track + an animated arc) rather than the
+   default ProgressIndicator skin, which renders determinate progress as a
+   solid pac-man-style wedge inside its own frame - mismatched with the
+   "ring" shell around it. Both shapes are plain SVG-ish shapes so they take
+   a real gradient stroke and a rounded cap. */
+.progress-ring-track {
+    -fx-fill: transparent;
+    -fx-stroke: -ra-accent-soft;
+    -fx-stroke-width: 11px;
+}
+
+.progress-ring-arc {
+    -fx-fill: transparent;
+    -fx-stroke: linear-gradient(to bottom right, -ra-accent, -ra-accent-hover);
+    -fx-stroke-width: 11px;
+    -fx-effect: dropshadow(gaussian, rgba(108,76,240,0.35), 8, 0.2, 0, 0);
 }
 
 .progress-ring-value {
@@ -1094,7 +1157,7 @@
 }
 
 .quiz-question-number {
-    -fx-background-color: linear-gradient(to bottom right, #6C4CF0, #FF6F91);
+    -fx-background-color: linear-gradient(to bottom right, #6C4CF0, #8F6BFF);
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-font-size: 12px;
@@ -1153,7 +1216,7 @@
 }
 
 .quiz-result-banner {
-    -fx-background-color: linear-gradient(to right, -ra-accent-soft, -ra-accent-2-soft);
+    -fx-background-color: linear-gradient(to right, -ra-accent-soft, -ra-teal-soft);
     -fx-background-radius: 14px;
     -fx-padding: 14 18 14 18;
 }
@@ -1197,9 +1260,6 @@
 }
 
 /* ---------- Authentication polish ---------- */
-.auth-card {
-    -fx-effect: dropshadow(gaussian, rgba(63,49,120,0.16), 26, 0.12, 0, 8);
-}
 
 
 /* ====== UI refresh: lively cards + responsive layouts ====== */
@@ -1218,6 +1278,8 @@
 .flashcard-tile:hover, .question-library-card:hover {
     -fx-border-color: #8A70F5;
     -fx-effect: dropshadow(gaussian, rgba(108, 76, 240, 0.22), 20, 0.18, 0, 6);
+    -fx-scale-x: 1.015;
+    -fx-scale-y: 1.015;
 }
 .flashcard-tile:selected, .question-library-card:selected {
     -fx-border-color: #6C4CF0;
@@ -1253,7 +1315,7 @@
 }
 .quiz-question-card .radio-button:hover { -fx-background-color: #F0ECFF; -fx-border-color: #A08BF3; }
 .quiz-correct-option { -fx-background-color: #E7F8F4; -fx-border-color: #17B8A6; }
-.quiz-wrong-option { -fx-background-color: #FFF0F3; -fx-border-color: #FF6F91; }
+.quiz-wrong-option { -fx-background-color: -ra-error-soft; -fx-border-color: -ra-error; }
 .history-card { -fx-background-color: #F8F7FC; -fx-background-radius: 14; -fx-padding: 12 16; -fx-border-color: #E9E4F7; -fx-border-radius: 14; }
 .history-score { -fx-background-color: #E9E3FF; -fx-background-radius: 12; -fx-padding: 7 12; -fx-text-fill: #5B3ED0; -fx-font-weight: 800; }
 .badge-accent, .badge-success, .badge-warning { -fx-background-radius: 999; -fx-padding: 5 9; -fx-font-size: 11px; -fx-font-weight: 800; }
@@ -1274,7 +1336,7 @@
 .feature-list .list-cell:filled:hover > * { -fx-opacity: 0.96; }
 .card-title { -fx-font-size: 16px; -fx-font-weight: 800; -fx-text-fill: #28203D; }
 .exam-card, .session-card, .task-card { -fx-background-color: #FFFFFF; -fx-background-radius: 18; -fx-border-color: #E8E2F7; -fx-border-radius: 18; -fx-padding: 16; -fx-effect: dropshadow(gaussian, rgba(54,39,100,.10), 15, .12, 0, 4); }
-.exam-card:hover, .session-card:hover, .task-card:hover { -fx-border-color: #9B87F5; -fx-effect: dropshadow(gaussian, rgba(108,76,240,.18), 18, .14, 0, 5); }
+.exam-card:hover, .session-card:hover, .task-card:hover { -fx-border-color: #9B87F5; -fx-effect: dropshadow(gaussian, rgba(108,76,240,.18), 18, .14, 0, 5); -fx-scale-x: 1.012; -fx-scale-y: 1.012; }
 .session-date { -fx-font-size: 12px; -fx-font-weight: 800; -fx-text-fill: #6C4CF0; }
 .task-card.completed { -fx-opacity: 0.72; -fx-border-color: #BFECE5; }
 .task-card.overdue { -fx-border-color: #FFB7C7; -fx-background-color: #FFF8FA; }

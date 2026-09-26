@@ -51,6 +51,23 @@ public class UserDAO {
         return null;
     }
 
+    /** Looks up an account by id - used to restore a persisted "remember me" session. */
+    public User findById(int id) throws SQLException {
+        String sql = "SELECT id, name, email, password_hash, onboarding_completed FROM users WHERE id = ?";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, id);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return mapRow(resultSet);
+                }
+            }
+        }
+        return null;
+    }
+
 
     /** Claims study records created before account ownership existed for the first registered user. */
     public void claimLegacyStudyData(int userId) throws SQLException {

@@ -93,7 +93,13 @@ public class DashboardService {
         return result;
     }
 
-    /** Exam preparation is derived from the completion of topics belonging to the exam's subject. */
+    /**
+     * Exam preparation shown here is the exam's own {@code progress} value -
+     * the same one set by the preparation slider on the Exam screen - not a
+     * value recalculated from topic completion. Topic counts are included
+     * only as supporting context (how much of the subject is covered), so
+     * the percentage shown always matches what the user actually set.
+     */
     public List<ExamProgress> getUpcomingExamProgress(int maxCount) throws SQLException {
         List<Subject> subjects = subjectService.getAllSubjects();
         List<ExamProgress> result = new ArrayList<>();
@@ -105,7 +111,7 @@ public class DashboardService {
             List<Topic> topics = topicService.getTopicsForSubject(exam.getSubjectId());
             int total = topics.size();
             int completed = (int) topics.stream().filter(Topic::isCompleted).count();
-            int progress = total == 0 ? 0 : (int) Math.round(completed * 100.0 / total);
+            int progress = Math.max(0, Math.min(100, exam.getProgress()));
             result.add(new ExamProgress(exam.getTitle(), subjectName, exam.getExamDate(),
                     exam.getDaysRemaining(), completed, total, progress));
         }

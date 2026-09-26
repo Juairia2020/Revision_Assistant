@@ -18,7 +18,7 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.control.ProgressIndicator;
+import javafx.scene.shape.Arc;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -38,7 +38,7 @@ public class DashboardController {
     @FXML private Label completedTopicsValue;
     @FXML private Label overallProgressRingValue;
     @FXML private Label progressSummaryLabel;
-    @FXML private ProgressIndicator overallProgressBar;
+    @FXML private Arc overallProgressArc;
     @FXML private VBox todaysTasksBox;
     @FXML private VBox upcomingExamsBox;
     @FXML private VBox subjectProgressBox;
@@ -68,6 +68,17 @@ public class DashboardController {
     }
 
     public void refresh() {
+        refreshStats();
+        refreshTasks();
+        refreshExams();
+        refreshSubjectProgress();
+        refreshActivity();
+        refreshContinue();
+        animateEntrance();
+    }
+
+    /** Top stat row + the "Overall Progress" ring. Kept together since the ring is derived from the same numbers. */
+    private void refreshStats() {
         try {
             int overall = dashboardService.getOverallProgressPercent();
             int completedTopics = dashboardService.getCompletedTopicCount();
@@ -82,16 +93,63 @@ public class DashboardController {
             overallProgressRingValue.setText(overall + "%");
             progressSummaryLabel.setText(completedTopics + " of " + totalTopics + " topics completed");
             animateProgress(overall / 100.0);
-
-            renderTasks(dashboardService.getTodaysTasks(), dashboardService.getOverdueTasks());
-            renderExams(dashboardService.getUpcomingExamProgress(5));
-            renderSubjectProgress(dashboardService.getSubjectProgress());
-            renderActivity(dashboardService.getStudyActivity(7));
-            renderContinue(dashboardService.getContinueItem());
-            animateEntrance();
         } catch (SQLException | RuntimeException e) {
-            todaysTasksBox.getChildren().setAll(emptyStateLabel("Could not load dashboard data."));
-            upcomingExamsBox.getChildren().setAll(emptyStateLabel("Dashboard data is temporarily unavailable."));
+            overallProgressValue.setText("—");
+            pendingTasksValue.setText("—");
+            studyWeekValue.setText("—");
+            upcomingExamCountValue.setText("—");
+            completedTopicsValue.setText("—");
+            overallProgressRingValue.setText("—");
+            progressSummaryLabel.setText("Progress data is temporarily unavailable.");
+            animateProgress(0.0);
+        }
+    }
+
+    private void refreshTasks() {
+        try {
+            renderTasks(dashboardService.getTodaysTasks(), dashboardService.getOverdueTasks());
+        } catch (SQLException | RuntimeException e) {
+            todaysTasksBox.getChildren().setAll(emptyStateLabel("Could not load today's tasks."));
+        }
+    }
+
+    private void refreshExams() {
+        try {
+            renderExams(dashboardService.getUpcomingExamProgress(5));
+        } catch (SQLException | RuntimeException e) {
+            upcomingExamsBox.getChildren().setAll(emptyStateLabel("Could not load upcoming exams."));
+        }
+    }
+
+    private void refreshSubjectProgress() {
+        try {
+            renderSubjectProgress(dashboardService.getSubjectProgress());
+        } catch (SQLException | RuntimeException e) {
+            subjectProgressBox.getChildren().setAll(emptyStateLabel("Could not load subject progress."));
+        }
+    }
+
+    private void refreshActivity() {
+        try {
+            renderActivity(dashboardService.getStudyActivity(7));
+        } catch (SQLException | RuntimeException e) {
+            activityChart.getData().clear();
+            activityChart.setVisible(false);
+            activityChart.setManaged(false);
+            activityEmptyLabel.setText("Study activity is temporarily unavailable.");
+            activityEmptyLabel.setVisible(true);
+            activityEmptyLabel.setManaged(true);
+        }
+    }
+
+    private void refreshContinue() {
+        try {
+            renderContinue(dashboardService.getContinueItem());
+        } catch (SQLException | RuntimeException e) {
+            continueItem = null;
+            continueSectionLabel.setText("Continue Studying");
+            continueTitleLabel.setText("Not available right now");
+            continueButton.setText("Continue →");
         }
     }
 
@@ -103,10 +161,24 @@ public class DashboardController {
     }
 
     private void animateProgress(double target) {
-        overallProgressBar.setProgress(0);
+        double targetLength = -360.0 * target;
+
+        overallProgressArc.setLength(0);
+
         Timeline timeline = new Timeline(
-                new KeyFrame(Duration.ZERO, new KeyValue(overallProgressBar.progressProperty(), 0)),
-                new KeyFrame(Duration.millis(650), new KeyValue(overallProgressBar.progressProperty(), target)));
+                new KeyFrame(
+                        Duration.ZERO,
+                        new KeyValue(overallProgressArc.lengthProperty(), 0)
+                ),
+                new KeyFrame(
+                        Duration.millis(650),
+                        new KeyValue(
+                                overallProgressArc.lengthProperty(),
+                                targetLength
+                        )
+                )
+        );
+
         timeline.play();
     }
 
@@ -185,11 +257,15 @@ public class DashboardController {
         }
     }
 
+    private static final String NO_ACTIVITY_MESSAGE =
+            "No study activity yet. Complete a study session and it will appear here.";
+
     private void renderActivity(List<StudyActivity> activities) {
         activityChart.getData().clear();
         if (activities.stream().allMatch(a -> a.getMinutes() == 0)) {
             activityChart.setVisible(false);
             activityChart.setManaged(false);
+            activityEmptyLabel.setText(NO_ACTIVITY_MESSAGE);
             activityEmptyLabel.setVisible(true);
             activityEmptyLabel.setManaged(true);
             return;

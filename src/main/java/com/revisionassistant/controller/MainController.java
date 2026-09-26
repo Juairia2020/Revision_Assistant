@@ -2,6 +2,7 @@ package com.revisionassistant.controller;
 
 import com.revisionassistant.model.User;
 import com.revisionassistant.navigation.AppNavigator;
+import com.revisionassistant.service.UserService;
 import com.revisionassistant.session.CurrentUser;
 import javafx.animation.FadeTransition;
 import javafx.fxml.FXML;
@@ -116,7 +117,7 @@ public class MainController {
 
     @FXML
     private void handleLogout() {
-        CurrentUser.clear();
+        new UserService().logout();
         try {
             AppNavigator.showLogin((javafx.stage.Stage) contentArea.getScene().getWindow());
         } catch (Exception e) {

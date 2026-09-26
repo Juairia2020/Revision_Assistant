@@ -32,6 +32,12 @@ public class RegistrationController {
                     passwordField.getText(),
                     confirmPasswordField.getText()
             );
+            try {
+                userService.rememberCurrentSession();
+            } catch (SQLException e) {
+                // Persisting "remember me" is a convenience on top of a successful
+                // registration, not a requirement for it.
+            }
             AppNavigator.showMain(getStage());
         } catch (IllegalArgumentException | IllegalStateException e) {
             showError(e.getMessage());

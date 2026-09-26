@@ -3,8 +3,11 @@ package com.revisionassistant.session;
 import com.revisionassistant.model.User;
 
 /**
- * In-memory application session. It is intentionally not persisted, so a
- * newly started application requires login again.
+ * In-memory application session for the currently signed-in user. This
+ * class itself is never persisted - restoring a session across application
+ * launches is handled separately by {@code UserService#tryAutoLogin()} and
+ * {@code com.revisionassistant.security.RememberMeStore}, which populate
+ * this class the same way an interactive login does.
  */
 public final class CurrentUser {
 
