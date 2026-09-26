@@ -91,20 +91,6 @@ mvn package
 java --module-path /path/to/javafx-sdk/lib --add-modules javafx.controls,javafx.fxml -jar target/revision-assistant.jar
 ```
 
-### Optional: AI generation
-
-Set your API key to enable AI-powered flashcard and quiz question generation:
-
-```bash
-# Environment variable
-export REVISION_ASSISTANT_API_KEY=your_key_here
-
-# Or create config.properties in the project root
-api.key=your_key_here
-api.model=claude-haiku-4-5-20251001    # optional
-```
-
----
 
 ## Screens
 
@@ -122,10 +108,3 @@ api.model=claude-haiku-4-5-20251001    # optional
 12. **Settings** — appearance, notifications, Pomodoro durations
 
 ---
-
-## Future Improvements
-
-- Spaced repetition scheduling for flashcards
-- Optional system-level reminder notifications
-- Cloud sync / multi-device support
-- Export progress report to PDF
