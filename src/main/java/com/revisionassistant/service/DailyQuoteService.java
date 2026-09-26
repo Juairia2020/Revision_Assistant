@@ -14,7 +14,7 @@ import java.time.Duration;
 public class DailyQuoteService {
     public record Quote(String text, String author) {}
 
-    private static final URI ENDPOINT = URI.create("https://zenquotes.io/api/today");
+    private static final URI ENDPOINT = URI.create("https://zenquotes.io/api/random");
     private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(8)).build();
     private final ObjectMapper mapper = new ObjectMapper();
 
