@@ -5,9 +5,6 @@ import com.revisionassistant.model.Subject;
 import com.revisionassistant.model.Task;
 import com.revisionassistant.model.Topic;
 import com.revisionassistant.util.DialogStyler;
-import com.revisionassistant.service.StudyPlannerService;
-import com.revisionassistant.service.StudyPlannerService.Strategy;
-import com.revisionassistant.service.StudyPlannerService.StudyPlan;
 import com.revisionassistant.service.SubjectService;
 import com.revisionassistant.service.TopicDependencyService;
 import com.revisionassistant.service.TopicService;
@@ -35,7 +32,7 @@ import java.util.Map;
  * practical front end for the {@code algorithm} package's graph
  * algorithms) and the Study Planner tab (front end for the Knapsack /
  * Sum of Subsets planner). All graph and planning logic lives in
- * {@link TopicDependencyService} and {@link StudyPlannerService} - this
+ * {@link TopicDependencyService} - this
  * class only wires up the controls and renders their results.
  */
 public class StudyToolsController {
@@ -54,21 +51,9 @@ public class StudyToolsController {
     @FXML
     private VBox dependentsBox;
 
-    // ----- Study Planner tab ---------------------------------------------
-
-    @FXML
-    private TextField availableMinutesField;
-    @FXML
-    private ComboBox<Strategy> strategyComboBox;
-    @FXML
-    private Label planSummaryLabel;
-    @FXML
-    private VBox recommendedTasksBox;
-
     private final SubjectService subjectService = new SubjectService();
     private final TopicService topicService = new TopicService();
     private final TopicDependencyService dependencyService = new TopicDependencyService();
-    private final StudyPlannerService plannerService = new StudyPlannerService();
 
     private final ObservableList<Subject> subjects = FXCollections.observableArrayList();
     private final ObservableList<Topic> allTopics = FXCollections.observableArrayList();
@@ -77,7 +62,6 @@ public class StudyToolsController {
     @FXML
     public void initialize() {
         setUpDependencyTab();
-        setUpPlannerTab();
         refreshSubjects();
         refreshTopics();
     }
@@ -93,26 +77,6 @@ public class StudyToolsController {
         prerequisiteComboBox.setConverter(topicConverter(prerequisiteComboBox));
 
         refreshDependencyPanels();
-    }
-
-    private void setUpPlannerTab() {
-        strategyComboBox.setItems(FXCollections.observableArrayList(Strategy.values()));
-        strategyComboBox.setConverter(new StringConverter<Strategy>() {
-            @Override
-            public String toString(Strategy strategy) {
-                if (strategy == null) {
-                    return "";
-                }
-                return strategy == Strategy.PRIORITY_BASED
-                        ? "Priority-based (recommended)" : "Maximize time used";
-            }
-
-            @Override
-            public Strategy fromString(String string) {
-                return strategyComboBox.getValue();
-            }
-        });
-        strategyComboBox.setValue(Strategy.PRIORITY_BASED);
     }
 
     // ----- Topic Dependencies handlers ------------------------------------
@@ -269,70 +233,6 @@ public class StudyToolsController {
             removeButton.setOnAction(event -> onRemove.run());
             row.getChildren().add(removeButton);
         }
-        return row;
-    }
-
-    // ----- Study Planner handlers --------------------------------------------
-
-    @FXML
-    private void handleGeneratePlan() {
-        int minutes;
-        try {
-            minutes = Integer.parseInt(availableMinutesField.getText().trim());
-        } catch (NumberFormatException e) {
-            showAlert(Alert.AlertType.WARNING, "Invalid time",
-                    "Enter the number of minutes you have available as a whole number.");
-            return;
-        }
-
-        try {
-            StudyPlan plan = plannerService.generatePlan(minutes, strategyComboBox.getValue());
-            renderPlan(plan);
-        } catch (IllegalArgumentException e) {
-            showAlert(Alert.AlertType.WARNING, "Could not generate plan", e.getMessage());
-        } catch (SQLException e) {
-            showAlert(Alert.AlertType.ERROR, "Database error", e.getMessage());
-        }
-    }
-
-    private void renderPlan(StudyPlan plan) {
-        recommendedTasksBox.getChildren().clear();
-
-        String summary = plan.getMinutesUsed() + " of " + plan.getMinutesAvailable() + " minutes used";
-        if (plan.getStrategy() == Strategy.PRIORITY_BASED) {
-            summary += "  ·  total priority score " + plan.getTotalValue();
-        }
-        planSummaryLabel.setText(summary);
-
-        if (plan.getRecommendedTasks().isEmpty()) {
-            recommendedTasksBox.getChildren().add(
-                    emptyStateLabel("No pending tasks fit in the available time."));
-            return;
-        }
-
-        for (Task task : plan.getRecommendedTasks()) {
-            recommendedTasksBox.getChildren().add(buildTaskRow(task));
-        }
-    }
-
-    private HBox buildTaskRow(Task task) {
-        Subject subject = subjectsById.get(task.getSubjectId());
-
-        Label title = new Label(task.getTitle());
-        title.getStyleClass().add("row-title");
-
-        String subjectName = subject == null ? "" : subject.getName();
-        String deadlinePart = task.getDeadline() == null ? "" : " · due " + task.getDeadline();
-        Label meta = new Label(subjectName + " · " + task.getEstimatedMinutes() + " min · "
-                + task.getPriority().getLabel() + " priority" + deadlinePart);
-        meta.getStyleClass().add("row-meta");
-
-        VBox textBox = new VBox(2, title, meta);
-        HBox.setHgrow(textBox, Priority.ALWAYS);
-
-        HBox row = new HBox(10, textBox);
-        row.setAlignment(Pos.CENTER_LEFT);
-        row.getStyleClass().add("dashboard-row");
         return row;
     }
 

@@ -92,6 +92,7 @@ public final class DatabaseManager {
                         "    user_id INTEGER," +
                         "    subject_id INTEGER NOT NULL," +
                         "    topic_id INTEGER," +
+                        "    task_id INTEGER," +
                         "    session_date TEXT NOT NULL," +
                         "    duration_minutes INTEGER NOT NULL," +
                         "    notes TEXT," +
@@ -274,6 +275,7 @@ public final class DatabaseManager {
             statement.execute(createMindMapNodesTable);
             statement.execute(createExamTopicsTable);
             statement.execute(createResourcesTable);
+            migrateSessionTaskLink(statement);
             migrateUserOnboardingState(statement);
             migrateStudyDataOwnership(statement);
             migrateTaskStatusColumn(statement);
@@ -313,6 +315,19 @@ public final class DatabaseManager {
             // Existing tasks predate the status field - line their status
             // up with whatever "completed" already recorded for them.
             statement.executeUpdate("UPDATE tasks SET status='COMPLETED' WHERE completed=1");
+        }
+    }
+
+    /** Adds study_sessions.task_id so a session can be tied to a task. */
+    private static void migrateSessionTaskLink(Statement statement) throws SQLException {
+        boolean hasColumn = false;
+        try (ResultSet columns = statement.executeQuery("PRAGMA table_info(study_sessions)")) {
+            while (columns.next()) {
+                if ("task_id".equalsIgnoreCase(columns.getString("name"))) hasColumn = true;
+            }
+        }
+        if (!hasColumn) {
+            statement.execute("ALTER TABLE study_sessions ADD COLUMN task_id INTEGER");
         }
     }
 

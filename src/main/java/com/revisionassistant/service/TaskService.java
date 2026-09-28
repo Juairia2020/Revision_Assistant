@@ -76,6 +76,24 @@ public class TaskService {
         taskDAO.updateCompleted(taskId, completed);
     }
 
+    /**
+     * Applies a logged study session to its task: if the session was shorter
+     * than the task's planned duration the task becomes In progress, otherwise
+     * Completed. A task that is already Completed is never re-opened by a
+     * shorter follow-up session.
+     *
+     * @return the updated task, or null if it no longer exists
+     */
+    public Task applySessionOutcome(int taskId, int sessionMinutes) throws SQLException {
+        Task task = taskDAO.findAll().stream().filter(t -> t.getId() == taskId).findFirst().orElse(null);
+        if (task == null) return null;
+        TaskStatus target = sessionMinutes < task.getEstimatedMinutes() ? TaskStatus.IN_PROGRESS : TaskStatus.COMPLETED;
+        if (task.getStatus() == TaskStatus.COMPLETED && target == TaskStatus.IN_PROGRESS) return task;
+        task.setStatus(target);
+        taskDAO.update(task);
+        return task;
+    }
+
     public void deleteTask(int taskId) throws SQLException {
         taskDAO.delete(taskId);
     }

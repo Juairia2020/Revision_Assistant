@@ -4,7 +4,11 @@ import com.revisionassistant.database.DatabaseManager;
 import com.revisionassistant.navigation.AppNavigator;
 import com.revisionassistant.service.UserService;
 import javafx.application.Application;
+import com.revisionassistant.service.PomodoroTimerService;
+import com.revisionassistant.service.ReminderNotificationService;
+import com.revisionassistant.util.PomodoroSessionPrompt;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
 
 import java.sql.SQLException;
@@ -26,6 +30,22 @@ public class Main extends Application {
             return;
         }
 
+        PomodoroTimerService pomodoro = PomodoroTimerService.getInstance();
+        pomodoro.setOnWorkSessionComplete(PomodoroSessionPrompt::prompt);
+        primaryStage.setOnCloseRequest(event -> {
+            if (!pomodoro.isFocusSessionActive()) return;
+            ButtonType closeApp = new ButtonType("Close App", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
+            ButtonType keepFocusing = new ButtonType("Keep Focusing", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "", closeApp, keepFocusing);
+            confirm.setTitle("Focus session in progress");
+            confirm.setHeaderText("Are you sure? It\u2019s Focus Time!");
+            confirm.initOwner(primaryStage);
+            com.revisionassistant.util.DialogStyler.style(confirm);
+            if (confirm.showAndWait().orElse(keepFocusing) != closeApp) {
+                event.consume();
+            }
+        });
+
         try {
             boolean restoredSession = false;
             try {
@@ -43,6 +63,13 @@ public class Main extends Application {
         } catch (Exception e) {
             showFatalError("Could not start the application:\n" + e.getMessage());
         }
+    }
+
+    @Override
+    public void stop() {
+        PomodoroTimerService.getInstance().shutdown();
+        ReminderNotificationService reminders = ReminderNotificationService.getActive();
+        if (reminders != null) reminders.stop();
     }
 
     private void showFatalError(String message) {

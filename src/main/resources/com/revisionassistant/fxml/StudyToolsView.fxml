@@ -69,46 +69,6 @@
                     </content>
                 </Tab>
                 <!-- Workbench 2: planner; control strip + generated plan as the main focus -->
-                <Tab text="Study Planner">
-                    <content>
-                        <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" styleClass="dashboard-scroll">
-                            <content>
-                                <VBox spacing="16" styleClass="page-content">
-                                    <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
-                                    <children>
-                                        <HBox spacing="14" alignment="CENTER_LEFT" styleClass="action-bar">
-                                            <children>
-                                                <VBox spacing="4" styleClass="action-group">
-                                                    <Label text="TIME AVAILABLE" styleClass="action-caption"/>
-                                                    <HBox spacing="8" alignment="CENTER_LEFT">
-                                                        <TextField fx:id="availableMinutesField" promptText="e.g. 90" prefWidth="90"/>
-                                                        <Label text="min" styleClass="row-meta"/>
-                                                    </HBox>
-                                                </VBox>
-                                                <Region styleClass="action-divider"/>
-                                                <VBox spacing="4" styleClass="action-group">
-                                                    <Label text="STRATEGY" styleClass="action-caption"/>
-                                                    <HBox spacing="8" alignment="CENTER_LEFT">
-                                                        <ComboBox fx:id="strategyComboBox" prefWidth="230"/>
-                                                        <Button text="Generate Plan" onAction="#handleGeneratePlan" styleClass="primary-button"/>
-                                                    </HBox>
-                                                </VBox>
-                                                <Region HBox.hgrow="ALWAYS"/>
-                                                <Label fx:id="planSummaryLabel" text="" styleClass="row-meta"/>
-                                            </children>
-                                        </HBox>
-                                        <VBox spacing="8" styleClass="panel" VBox.vgrow="ALWAYS" minHeight="320">
-                                            <children>
-                                                <Label text="Recommended tasks" styleClass="panel-title"/>
-                                                <VBox fx:id="recommendedTasksBox" spacing="6"/>
-                                            </children>
-                                        </VBox>
-                                    </children>
-                                </VBox>
-                            </content>
-                        </ScrollPane>
-                    </content>
-                </Tab>
             </tabs>
         </TabPane>
     </center>

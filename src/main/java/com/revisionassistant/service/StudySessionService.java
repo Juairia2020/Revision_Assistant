@@ -17,6 +17,7 @@ public class StudySessionService {
 
     private final StudySessionDAO studySessionDAO;
     private final SubjectDAO subjectDAO;
+    private final TaskService taskService = new TaskService();
 
     public StudySessionService() {
         this.studySessionDAO = new StudySessionDAO();
@@ -25,12 +26,21 @@ public class StudySessionService {
 
     public StudySession addSession(int subjectId, Integer topicId, LocalDate date,
                                     int durationMinutes, String notes) throws SQLException {
+        return addSession(subjectId, topicId, null, date, durationMinutes, notes);
+    }
+
+    /** Adds a session, optionally tied to a task whose status is then updated from the session length. */
+    public StudySession addSession(int subjectId, Integer topicId, Integer taskId, LocalDate date,
+                                    int durationMinutes, String notes) throws SQLException {
         validateSubject(subjectId);
         validateDate(date);
         validateDuration(durationMinutes);
         StudySession session = new StudySession(subjectId, topicId, date,
                 durationMinutes, notes == null ? null : notes.trim());
-        return studySessionDAO.insert(session);
+        session.setTaskId(taskId);
+        StudySession saved = studySessionDAO.insert(session);
+        if (taskId != null) taskService.applySessionOutcome(taskId, durationMinutes);
+        return saved;
     }
 
     public List<StudySession> getAllSessions() throws SQLException {
@@ -42,6 +52,7 @@ public class StudySessionService {
         validateDate(session.getDate());
         validateDuration(session.getDurationMinutes());
         studySessionDAO.update(session);
+        if (session.getTaskId() != null) taskService.applySessionOutcome(session.getTaskId(), session.getDurationMinutes());
     }
 
     public void deleteSession(int sessionId) throws SQLException {

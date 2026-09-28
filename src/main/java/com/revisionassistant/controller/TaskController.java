@@ -9,6 +9,9 @@ import com.revisionassistant.service.SubjectService;
 import com.revisionassistant.util.DialogStyler;
 import com.revisionassistant.service.TaskService;
 import com.revisionassistant.service.TopicService;
+import com.revisionassistant.service.StudyPlannerService;
+import com.revisionassistant.service.StudyPlannerService.Strategy;
+import com.revisionassistant.service.StudyPlannerService.StudyPlan;
 import com.revisionassistant.service.StudySessionService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -67,6 +70,17 @@ public class TaskController {
     @FXML
     private ListView<Task> tasksList;
 
+    // ----- Auto-organize (formerly the Study Tools planner) -------------
+    @FXML
+    private TextField availableMinutesField;
+    @FXML
+    private ComboBox<Strategy> strategyComboBox;
+    @FXML
+    private Label planSummaryLabel;
+    @FXML
+    private VBox recommendedTasksBox;
+    private final StudyPlannerService plannerService = new StudyPlannerService();
+
     private final SubjectService subjectService = new SubjectService();
     private final TopicService topicService = new TopicService();
     private final TaskService taskService = new TaskService();
@@ -83,8 +97,77 @@ public class TaskController {
         setUpFormControls();
         setUpFilterControls();
         setUpTable();
+        setUpAutoOrganize();
         refreshSubjects();
         refreshTasks();
+    }
+
+    private void setUpAutoOrganize() {
+        strategyComboBox.setItems(FXCollections.observableArrayList(Strategy.values()));
+        strategyComboBox.setConverter(new StringConverter<Strategy>() {
+            @Override
+            public String toString(Strategy strategy) {
+                if (strategy == null) return "";
+                return strategy == Strategy.PRIORITY_BASED ? "Smart priority (recommended)" : "Fill my available time";
+            }
+            @Override
+            public Strategy fromString(String string) { return strategyComboBox.getValue(); }
+        });
+        strategyComboBox.setValue(Strategy.PRIORITY_BASED);
+        availableMinutesField.setText("120");
+        planSummaryLabel.setText("Choose your available time and click Organize — your pending tasks are picked and ordered for you.");
+    }
+
+    /** One click: pick and order the user's existing pending tasks for the time they have. */
+    @FXML
+    private void handleOrganizeTasks() {
+        int minutes;
+        try {
+            minutes = Integer.parseInt(availableMinutesField.getText().trim());
+        } catch (NumberFormatException e) {
+            showAlert(Alert.AlertType.WARNING, "Invalid time",
+                    "Enter the number of minutes you have available as a whole number.");
+            return;
+        }
+        try {
+            renderPlan(plannerService.generatePlan(minutes, strategyComboBox.getValue()));
+        } catch (IllegalArgumentException e) {
+            showAlert(Alert.AlertType.WARNING, "Could not organize tasks", e.getMessage());
+        } catch (SQLException e) {
+            showAlert(Alert.AlertType.ERROR, "Database error", e.getMessage());
+        }
+    }
+
+    private void renderPlan(StudyPlan plan) {
+        recommendedTasksBox.getChildren().clear();
+        String summary = plan.getMinutesUsed() + " of " + plan.getMinutesAvailable() + " minutes planned";
+        if (plan.getStrategy() == Strategy.PRIORITY_BASED) summary += "  ·  priority score " + plan.getTotalValue();
+        planSummaryLabel.setText(summary);
+
+        if (plan.getRecommendedTasks().isEmpty()) {
+            Label empty = new Label("No pending tasks fit in the available time.");
+            empty.getStyleClass().add("empty-state");
+            recommendedTasksBox.getChildren().add(empty);
+            return;
+        }
+        int order = 1;
+        for (Task task : plan.getRecommendedTasks()) {
+            Label number = new Label(String.valueOf(order++));
+            number.getStyleClass().add("counter-pill");
+            Label title = new Label(task.getTitle());
+            title.getStyleClass().add("row-title");
+            Subject subject = subjectsById.get(task.getSubjectId());
+            String deadlinePart = task.getDeadline() == null ? "" : " · due " + task.getDeadline();
+            Label meta = new Label((subject == null ? "" : subject.getName() + " · ") + task.getEstimatedMinutes()
+                    + " min · " + task.getPriority().getLabel() + " priority" + deadlinePart);
+            meta.getStyleClass().add("row-meta");
+            VBox text = new VBox(2, title, meta);
+            HBox.setHgrow(text, javafx.scene.layout.Priority.ALWAYS);
+            HBox row = new HBox(10, number, text);
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.getStyleClass().add("dashboard-row");
+            recommendedTasksBox.getChildren().add(row);
+        }
     }
 
     private void setUpFormControls() {
@@ -244,10 +327,14 @@ public class TaskController {
                 studySessionService.addSession(
                         task.getSubjectId(),
                         task.getTopicId(),
+                        task.getId(),
                         LocalDate.now(),
                         minutes,
                         "From study task: " + task.getTitle());
-                showFormMessage("Study session added for this task.", false);
+                refreshTasks();
+                showFormMessage("Session added — task marked "
+                        + (minutes < task.getEstimatedMinutes() ? "In progress" : "Completed")
+                        + " (" + minutes + " of " + task.getEstimatedMinutes() + " planned min).", false);
             } catch (NumberFormatException e) {
                 showFormMessage("Enter a whole number of minutes.", true);
             } catch (IllegalArgumentException | SQLException e) {

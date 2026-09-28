@@ -85,7 +85,6 @@ public class MindMapController {
     @FXML
     private void handleSetRootTopic() {
         String text = rootTopicField.getText().trim();
-        if (text.isEmpty()) { setStatus("Enter a root topic first.", false); return; }
         if (!nodes.isEmpty()) { setStatus("This map already has a root. Use 'Center Selected' to make any existing node central.", false); return; }
 
         MapNode root = new MapNode(UUID.randomUUID().toString(), text, null,

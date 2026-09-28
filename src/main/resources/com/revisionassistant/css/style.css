@@ -3759,3 +3759,52 @@
     -fx-scale-x: 1;
     -fx-scale-y: 1;
 }
+
+/* ================================================================
+   Task screen: grouped form sections with clear emphasis levels
+   1) .panel-heading      - the one primary heading on the screen
+   2) .form-group-title   - small caption that groups related fields
+   3) .field-label        - quiet label above each control
+   4) .panel-tinted       - secondary helper panel (different fill,
+                            no shadow, smaller heading, own action)
+   ================================================================ */
+.panel.panel-form {
+    -fx-padding: 24 26 24 26;
+}
+.panel-heading {
+    -fx-text-fill: -ra-text;
+    -fx-font-size: 19px;
+    -fx-font-weight: 800;
+}
+.panel-subheading {
+    -fx-text-fill: -ra-text;
+    -fx-font-size: 14.5px;
+    -fx-font-weight: 700;
+}
+.form-group-title {
+    -fx-text-fill: -ra-accent;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: 800;
+    -fx-padding: 0 0 4 0;
+    -fx-border-color: transparent transparent -ra-border transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-max-width: infinity;
+}
+.panel.panel-tinted {
+    -fx-background-color: -ra-accent-soft;
+    -fx-border-color: -ra-border;
+    -fx-effect: null;
+}
+.panel.panel-tinted .field-label {
+    -fx-text-fill: -ra-text-secondary;
+}
+.root.theme-light .panel.panel-tinted {
+    -fx-background-color: #EEF0FF;
+    -fx-border-color: #C7CCF2;
+}
+.root.theme-dark .panel.panel-tinted {
+    -fx-background-color: #172036;
+    -fx-border-color: rgba(129,140,248,0.35);
+}
+.root.theme-light .form-group-title { -fx-text-fill: #4338CA; -fx-border-color: transparent transparent #BAC4D6 transparent; }
+.root.theme-dark  .form-group-title { -fx-text-fill: #A5B4FC; -fx-border-color: transparent transparent rgba(255,255,255,0.16) transparent; }

@@ -4,6 +4,7 @@ import com.revisionassistant.model.Subject;
 import com.revisionassistant.model.Topic;
 import com.revisionassistant.service.SubjectService;
 import com.revisionassistant.service.StudySessionService;
+import com.revisionassistant.service.TopicDependencyService;
 import com.revisionassistant.service.TopicMasteryService;
 import com.revisionassistant.service.TopicService;
 import com.revisionassistant.session.CurrentUser;
@@ -30,6 +31,8 @@ import javafx.util.Duration;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -51,6 +54,8 @@ public class StudyPathController {
     private final SubjectService subjectService = new SubjectService();
     private final TopicService topicService = new TopicService();
     private final StudySessionService studySessionService = new StudySessionService();
+    private final TopicDependencyService dependencyService = new TopicDependencyService();
+    private boolean dependencyCycleDetected;
     private final TopicMasteryService topicMasteryService = new TopicMasteryService();
 
     private ProgressTrack overallBar;
@@ -154,7 +159,7 @@ public class StudyPathController {
             // Build per-subject sections
             Map<Subject, List<Topic>> subjectTopics = new LinkedHashMap<>();
             for (Subject s : subjects) {
-                List<Topic> topics = topicService.getTopicsForSubject(s.getId());
+                List<Topic> topics = orderByDependencies(s.getId(), topicService.getTopicsForSubject(s.getId()));
                 subjectTopics.put(s, topics);
                 totalTopics += topics.size();
                 for (Topic t : topics) { if (t.isCompleted()) completedTopics++; }
@@ -165,7 +170,8 @@ public class StudyPathController {
 
             overallProgressLabel.setText(overallPercent + "%");
             overallBar.setProgress(overallFraction, true);
-            statsLabel.setText(completedTopics + " of " + totalTopics + " topics completed across " + subjects.size() + " subject" + (subjects.size() == 1 ? "" : "s"));
+            statsLabel.setText(completedTopics + " of " + totalTopics + " topics completed across " + subjects.size() + " subject" + (subjects.size() == 1 ? "" : "s")
+                    + (dependencyCycleDetected ? "  ·  Prerequisite cycle detected: fix it in Study Tools to enable dependency ordering." : "  ·  Ordered by prerequisites"));
 
             // Render path for each subject
             int subjectIndex = 0;
@@ -180,6 +186,43 @@ public class StudyPathController {
         } catch (SQLException e) {
             showToast("Could not load study path data.");
         }
+    }
+
+    /**
+     * Orders a subject's topics by the Topic Dependency Graph (prerequisites
+     * first). Falls back to the stored order if the graph contains a cycle.
+     */
+    private List<Topic> orderByDependencies(int subjectId, List<Topic> fallback) {
+        dependencyCycleDetected = false;
+        try {
+            List<Topic> ordered = dependencyService.getStudyOrder(subjectId);
+            Map<Integer, Topic> byId = new HashMap<>();
+            for (Topic t : fallback) byId.put(t.getId(), t);
+            List<Topic> result = new ArrayList<>();
+            for (Topic t : ordered) {
+                Topic fresh = byId.remove(t.getId());
+                if (fresh != null) result.add(fresh);
+            }
+            result.addAll(byId.values());   // topics missing from the graph keep their place at the end
+            return result;
+        } catch (IllegalStateException cycle) {
+            dependencyCycleDetected = true;
+            return fallback;
+        } catch (SQLException e) {
+            return fallback;
+        }
+    }
+
+    /** Names of direct prerequisites (in any subject) that are not completed yet; empty if unlocked. */
+    private List<String> unmetPrerequisites(Topic topic) {
+        List<String> unmet = new ArrayList<>();
+        try {
+            for (Topic prerequisite : dependencyService.getDirectPrerequisites(topic.getId())) {
+                
+                if (!prerequisite.isCompleted()) unmet.add(prerequisite.getName());
+            }
+        } catch (SQLException ignored) { }
+        return unmet;
     }
 
     private VBox buildSubjectSection(Subject subject, List<Topic> topics, int index) {
@@ -228,6 +271,13 @@ public class StudyPathController {
             // Find the topic actually worth studying next: weighs quiz weakness,
             // upcoming exams, unmet prerequisites and overdue tasks rather than
             // simply picking the first incomplete topic in the list.
+            Map<Integer, List<String>> lockedBy = new HashMap<>();
+            for (Topic t : topics) {
+                if (!t.isCompleted()) {
+                    List<String> unmet = unmetPrerequisites(t);
+                    if (!unmet.isEmpty()) lockedBy.put(t.getId(), unmet);
+                }
+            }
             int currentIndex = -1;
             String currentReason = null;
             try {
@@ -235,7 +285,7 @@ public class StudyPathController {
                 if (recommended.isPresent()) {
                     int recommendedTopicId = recommended.get().getTopic().getId();
                     for (int i = 0; i < topics.size(); i++) {
-                        if (topics.get(i).getId() == recommendedTopicId) {
+                        if (topics.get(i).getId() == recommendedTopicId && !lockedBy.containsKey(recommendedTopicId)) {
                             currentIndex = i;
                             currentReason = recommended.get().getReason();
                             break;
@@ -247,7 +297,7 @@ public class StudyPathController {
             }
             if (currentIndex == -1) {
                 for (int i = 0; i < topics.size(); i++) {
-                    if (!topics.get(i).isCompleted()) { currentIndex = i; break; }
+                    if (!topics.get(i).isCompleted() && !lockedBy.containsKey(topics.get(i).getId())) { currentIndex = i; break; }
                 }
             }
 
@@ -261,7 +311,7 @@ public class StudyPathController {
                 boolean isLast = (i == topics.size() - 1);
 
                 VBox nodeRow = buildPathNode(topic, isCompleted, isCurrent, isLast, color, i,
-                        isCurrent ? currentReason : null);
+                        isCurrent ? currentReason : null, lockedBy.get(topic.getId()));
                 pathNodes.getChildren().add(nodeRow);
             }
             section.getChildren().add(pathNodes);
@@ -271,7 +321,7 @@ public class StudyPathController {
     }
 
     private VBox buildPathNode(Topic topic, boolean completed, boolean current, boolean isLast, String color,
-                                int position, String reason) {
+                                int position, String reason, List<String> lockedBy) {
         VBox container = new VBox(0);
 
         HBox nodeRow = new HBox(14);
@@ -365,6 +415,10 @@ public class StudyPathController {
             Label badge = new Label("Study Now");
             badge.getStyleClass().add("path-badge-current");
             badgeRow.getChildren().add(badge);
+        } else if (lockedBy != null && !lockedBy.isEmpty()) {
+            Label badge = new Label("🔒 Locked");
+            badge.getStyleClass().add("path-badge-upcoming");
+            badgeRow.getChildren().add(badge);
         } else {
             Label badge = new Label("Upcoming");
             badge.getStyleClass().add("path-badge-upcoming");
@@ -381,6 +435,14 @@ public class StudyPathController {
             infoCol.getChildren().add(reasonLabel);
         }
 
+        if (!completed && lockedBy != null && !lockedBy.isEmpty()) {
+            Label lockLabel = new Label("Complete first: " + String.join(", ", lockedBy));
+            lockLabel.getStyleClass().add("path-node-reason");
+            lockLabel.setWrapText(true);
+            lockLabel.setMaxWidth(360);
+            infoCol.getChildren().add(lockLabel);
+        }
+
         // Action cluster: one fixed-width primary action + one compact secondary.
         Button actionBtn;
         if (completed) {
@@ -394,6 +456,10 @@ public class StudyPathController {
         actionBtn.setPrefWidth(112);
         actionBtn.setMaxWidth(112);
         actionBtn.setOnAction(e -> toggleTopicCompletion(topic));
+        if (!completed && lockedBy != null && !lockedBy.isEmpty()) {
+            actionBtn.setDisable(true);
+            actionBtn.setTooltip(new Tooltip("Finish its prerequisites first: " + String.join(", ", lockedBy)));
+        }
 
         Button logSessionBtn = new Button("+");
         logSessionBtn.getStyleClass().add("path-session-btn");

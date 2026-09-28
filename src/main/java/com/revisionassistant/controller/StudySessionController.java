@@ -2,7 +2,9 @@ package com.revisionassistant.controller;
 
 import com.revisionassistant.model.StudySession;
 import com.revisionassistant.model.Subject;
+import com.revisionassistant.model.Task;
 import com.revisionassistant.model.Topic;
+import com.revisionassistant.service.TaskService;
 import com.revisionassistant.service.StudySessionService;
 import com.revisionassistant.util.DialogStyler;
 import com.revisionassistant.service.SubjectService;
@@ -49,6 +51,10 @@ public class StudySessionController {
     @FXML
     private ComboBox<Topic> topicComboBox;
     @FXML
+    private ComboBox<Task> taskComboBox;
+    @FXML
+    private Label sessionStatusLabel;
+    @FXML
     private DatePicker sessionDatePicker;
     @FXML
     private Spinner<Integer> durationSpinner;
@@ -63,6 +69,7 @@ public class StudySessionController {
     private final StudySessionService studySessionService = new StudySessionService();
 
     private final ObservableList<Subject> subjects = FXCollections.observableArrayList();
+    private final TaskService taskService = new TaskService();
     private final ObservableList<StudySession> sessions = FXCollections.observableArrayList();
     private final Map<Integer, Subject> subjectsById = new HashMap<>();
     private final Map<Integer, Topic> topicsById = new HashMap<>();
@@ -81,7 +88,8 @@ public class StudySessionController {
                 return subjectComboBox.getValue();
             }
         });
-        subjectComboBox.valueProperty().addListener((obs, oldValue, newValue) -> refreshTopicChoices());
+        subjectComboBox.valueProperty().addListener((obs, oldValue, newValue) -> { refreshTopicChoices(); refreshTaskChoices(null); });
+        topicComboBox.valueProperty().addListener((obs, oldValue, newValue) -> refreshTaskChoices(null));
 
         durationSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(5, 600, 30, 5));
         durationSpinner.setEditable(true);
@@ -153,6 +161,7 @@ public class StudySessionController {
         refreshTopicChoices();
         Integer topicId = session.getTopicId();
         topicComboBox.setValue(topicId == null ? null : topicsById.get(topicId));
+        refreshTaskChoices(session.getTaskId());
         sessionDatePicker.setValue(session.getDate());
         durationSpinner.getValueFactory().setValue(session.getDurationMinutes());
         notesField.setText(session.getNotes());
@@ -163,12 +172,15 @@ public class StudySessionController {
         try {
             Subject subject = subjectComboBox.getValue();
             Topic topic = topicComboBox.getValue();
+            Task task = taskComboBox.getValue();
             studySessionService.addSession(
                     subject == null ? 0 : subject.getId(),
                     topic == null ? null : topic.getId(),
+                    task == null ? null : task.getId(),
                     sessionDatePicker.getValue(),
                     durationSpinner.getValue(),
                     notesField.getText());
+            reportTaskOutcome(task, durationSpinner.getValue());
             clearForm();
             refreshSessions();
         } catch (IllegalArgumentException | SQLException e) {
@@ -188,10 +200,14 @@ public class StudySessionController {
             Topic topic = topicComboBox.getValue();
             selected.setSubjectId(subject == null ? 0 : subject.getId());
             selected.setTopicId(topic == null ? null : topic.getId());
+            Task linked = taskComboBox.getValue();
+            selected.setTaskId(linked == null ? null : linked.getId());
             selected.setDate(sessionDatePicker.getValue());
             selected.setDurationMinutes(durationSpinner.getValue());
             selected.setNotes(notesField.getText());
             studySessionService.updateSession(selected);
+            reportTaskOutcome(linked, selected.getDurationMinutes());
+            refreshTaskChoices(selected.getTaskId());
             refreshSessions();
         } catch (IllegalArgumentException | SQLException e) {
             showAlert(Alert.AlertType.ERROR, "Could not update session", e.getMessage());
@@ -266,6 +282,44 @@ public class StudySessionController {
         });
     }
 
+    /** Lists tasks for the chosen subject/topic that can still be worked on (plus the currently linked one). */
+    private void refreshTaskChoices(Integer keepTaskId) {
+        ObservableList<Task> tasks = FXCollections.observableArrayList();
+        tasks.add(null);
+        Subject subject = subjectComboBox.getValue();
+        Topic topic = topicComboBox.getValue();
+        if (subject != null) {
+            try {
+                for (Task t : taskService.getAllTasks()) {
+                    boolean sameSubject = t.getSubjectId() == subject.getId();
+                    boolean topicOk = topic == null || t.getTopicId() == null || t.getTopicId() == topic.getId();
+                    boolean open = !t.isCompleted() || (keepTaskId != null && t.getId() == keepTaskId);
+                    if (sameSubject && topicOk && open) tasks.add(t);
+                }
+            } catch (SQLException e) {
+                showAlert(Alert.AlertType.ERROR, "Database error", "Could not load tasks: " + e.getMessage());
+            }
+        }
+        taskComboBox.setItems(tasks);
+        taskComboBox.setConverter(new StringConverter<Task>() {
+            @Override public String toString(Task t) {
+                return t == null ? "No task" : t.getTitle() + " (" + t.getEstimatedMinutes() + " min)";
+            }
+            @Override public Task fromString(String string) { return taskComboBox.getValue(); }
+        });
+        if (keepTaskId != null) {
+            for (Task t : tasks) if (t != null && t.getId() == keepTaskId) { taskComboBox.setValue(t); break; }
+        }
+    }
+
+    private void reportTaskOutcome(Task task, int minutes) {
+        if (sessionStatusLabel == null) return;
+        if (task == null) { sessionStatusLabel.setText(""); return; }
+        boolean shorter = minutes < task.getEstimatedMinutes();
+        sessionStatusLabel.setText("Task \"" + task.getTitle() + "\": " + minutes + " of " + task.getEstimatedMinutes()
+                + " planned min → " + (shorter ? "In progress" : "Completed"));
+    }
+
     private void refreshSessions() {
         rebuildTopicIndex();
         try {
@@ -293,6 +347,7 @@ public class StudySessionController {
         sessionDatePicker.setValue(LocalDate.now());
         durationSpinner.getValueFactory().setValue(30);
         notesField.clear();
+        taskComboBox.setValue(null);
         sessionsList.getSelectionModel().clearSelection();
     }
 

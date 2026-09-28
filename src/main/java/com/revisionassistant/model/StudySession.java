@@ -13,6 +13,7 @@ public class StudySession {
     private int id;
     private int subjectId;
     private Integer topicId;
+    private Integer taskId;
     private LocalDate date;
     private int durationMinutes;
     private String notes;
@@ -57,6 +58,14 @@ public class StudySession {
 
     public void setTopicId(Integer topicId) {
         this.topicId = topicId;
+    }
+
+    public Integer getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(Integer taskId) {
+        this.taskId = taskId;
     }
 
     public LocalDate getDate() {

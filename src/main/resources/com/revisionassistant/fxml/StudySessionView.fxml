@@ -21,6 +21,11 @@
                             </VBox>
                             <Region styleClass="action-divider"/>
                             <VBox spacing="4" styleClass="action-group">
+                                <Label text="TASK (OPTIONAL)" styleClass="action-caption"/>
+                                <ComboBox fx:id="taskComboBox" promptText="Link to a task" prefWidth="200"/>
+                            </VBox>
+                            <Region styleClass="action-divider"/>
+                            <VBox spacing="4" styleClass="action-group">
                                 <Label text="WHEN" styleClass="action-caption"/>
                                 <HBox spacing="8" alignment="CENTER_LEFT">
                                     <DatePicker fx:id="sessionDatePicker" prefWidth="150"/>
@@ -37,6 +42,7 @@
                         <HBox spacing="8" alignment="CENTER_LEFT" styleClass="action-footer">
                             <Button text="Add" onAction="#handleAddSession" styleClass="primary-button"/>
                             <Button text="Update" onAction="#handleEditSession" styleClass="secondary-button"/>
+                            <Label fx:id="sessionStatusLabel" styleClass="row-meta" wrapText="true"/>
                             <Region HBox.hgrow="ALWAYS"/>
                             <Button text="Delete" onAction="#handleDeleteSession" styleClass="danger-button"/>
                         </HBox>

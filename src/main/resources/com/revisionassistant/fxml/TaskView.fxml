@@ -9,56 +9,104 @@
     <center>
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="dashboard-scroll">
             <content>
-                <VBox spacing="20" alignment="TOP_CENTER" styleClass="page-content">
+                <VBox spacing="24" alignment="TOP_CENTER" styleClass="page-content">
                     <padding><Insets top="20" right="24" bottom="28" left="24"/></padding>
                     <children>
 
-                        <!-- Input: focused, centered vertical form -->
-                        <VBox spacing="14" maxWidth="760" styleClass="panel panel-round">
+                        <!-- SECTION 1 (primary): create / edit a task. Fields are grouped into
+                             "What to study" and "Details" so nothing sits at the same level. -->
+                        <VBox spacing="22" maxWidth="760" styleClass="panel panel-round panel-form">
                             <children>
-                                <VBox spacing="2">
-                                    <Label text="Plan a study task" styleClass="panel-title"/>
+                                <VBox spacing="4">
+                                    <Label text="Plan a study task" styleClass="panel-heading"/>
                                     <Label text="Choose a subject, give the task a clear title, and add optional details."
                                            styleClass="row-meta" wrapText="true"/>
                                 </VBox>
-                                <HBox spacing="12">
-                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                        <Label text="Subject" styleClass="field-label"/>
-                                        <ComboBox fx:id="subjectComboBox" promptText="Subject" maxWidth="Infinity"/>
-                                    </VBox>
-                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                        <Label text="Topic (optional)" styleClass="field-label"/>
-                                        <ComboBox fx:id="topicComboBox" promptText="Topic (optional)" maxWidth="Infinity"/>
-                                    </VBox>
-                                </HBox>
-                                <VBox spacing="4">
-                                    <Label text="Task title" styleClass="field-label"/>
-                                    <TextField fx:id="titleField" promptText="Task title"/>
+
+                                <!-- Group 1: what to study -->
+                                <VBox spacing="12">
+                                    <Label text="WHAT TO STUDY" styleClass="form-group-title"/>
+                                    <GridPane hgap="16" vgap="14">
+                                        <columnConstraints>
+                                            <ColumnConstraints percentWidth="50" hgrow="ALWAYS" minWidth="0"/>
+                                            <ColumnConstraints percentWidth="50" hgrow="ALWAYS" minWidth="0"/>
+                                        </columnConstraints>
+                                        <VBox spacing="6" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                            <Label text="Subject" styleClass="field-label"/>
+                                            <ComboBox fx:id="subjectComboBox" promptText="Select a subject" maxWidth="Infinity"/>
+                                        </VBox>
+                                        <VBox spacing="6" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                            <Label text="Topic (optional)" styleClass="field-label"/>
+                                            <ComboBox fx:id="topicComboBox" promptText="Select a topic" maxWidth="Infinity"/>
+                                        </VBox>
+                                        <VBox spacing="6" GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2">
+                                            <Label text="Task title" styleClass="field-label"/>
+                                            <TextField fx:id="titleField" promptText="e.g. Revise chapter 4 flashcards"/>
+                                        </VBox>
+                                    </GridPane>
                                 </VBox>
-                                <HBox spacing="12">
-                                    <VBox spacing="4">
-                                        <Label text="Time (min)" styleClass="field-label"/>
-                                        <Spinner fx:id="estimatedMinutesSpinner" prefWidth="110"/>
-                                    </VBox>
-                                    <VBox spacing="4">
-                                        <Label text="Priority" styleClass="field-label"/>
-                                        <ComboBox fx:id="priorityComboBox" prefWidth="130"/>
-                                    </VBox>
-                                    <VBox spacing="4">
-                                        <Label text="Status" styleClass="field-label"/>
-                                        <ComboBox fx:id="statusComboBox" prefWidth="140"/>
-                                    </VBox>
-                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                        <Label text="Deadline" styleClass="field-label"/>
-                                        <DatePicker fx:id="deadlinePicker" maxWidth="Infinity"/>
-                                    </VBox>
-                                </HBox>
+
+                                <!-- Group 2: details -->
+                                <VBox spacing="12">
+                                    <Label text="DETAILS" styleClass="form-group-title"/>
+                                    <GridPane hgap="16" vgap="14">
+                                        <columnConstraints>
+                                            <ColumnConstraints percentWidth="50" hgrow="ALWAYS" minWidth="0"/>
+                                            <ColumnConstraints percentWidth="50" hgrow="ALWAYS" minWidth="0"/>
+                                        </columnConstraints>
+                                        <VBox spacing="6" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                            <Label text="Time (min)" styleClass="field-label"/>
+                                            <Spinner fx:id="estimatedMinutesSpinner" maxWidth="Infinity"/>
+                                        </VBox>
+                                        <VBox spacing="6" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                            <Label text="Priority" styleClass="field-label"/>
+                                            <ComboBox fx:id="priorityComboBox" maxWidth="Infinity"/>
+                                        </VBox>
+                                        <VBox spacing="6" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                                            <Label text="Status" styleClass="field-label"/>
+                                            <ComboBox fx:id="statusComboBox" maxWidth="Infinity"/>
+                                        </VBox>
+                                        <VBox spacing="6" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                            <Label text="Deadline" styleClass="field-label"/>
+                                            <DatePicker fx:id="deadlinePicker" promptText="Pick a date" maxWidth="Infinity"/>
+                                        </VBox>
+                                    </GridPane>
+                                </VBox>
+
                                 <HBox spacing="8" alignment="CENTER_LEFT" styleClass="action-footer">
                                     <Button fx:id="addTaskButton" text="＋ Add task" onAction="#handleAddTask" styleClass="primary-button"/>
                                     <Button text="Update" onAction="#handleEditTask" styleClass="secondary-button"/>
                                     <Label fx:id="formStatusLabel" text="" wrapText="true" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
                                     <Button text="Delete" onAction="#handleDeleteTask" styleClass="danger-button"/>
                                 </HBox>
+                            </children>
+                        </VBox>
+
+                        <!-- SECTION 2 (secondary): quick planner. Tinted, smaller heading, own action,
+                             so it reads as a separate helper rather than more of the same form. -->
+                        <VBox spacing="16" maxWidth="760" styleClass="panel panel-round panel-form panel-tinted">
+                            <children>
+                                <VBox spacing="4">
+                                    <Label text="✦  Auto-organize my tasks" styleClass="panel-subheading"/>
+                                    <Label text="Pick how much time you have. The planner chooses and orders your existing pending tasks in one click."
+                                           styleClass="row-meta" wrapText="true"/>
+                                </VBox>
+                                <HBox spacing="16" alignment="BOTTOM_LEFT">
+                                    <VBox spacing="6" minWidth="140" prefWidth="140">
+                                        <Label text="Time available (min)" styleClass="field-label"/>
+                                        <TextField fx:id="availableMinutesField"/>
+                                    </VBox>
+                                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                        <Label text="Strategy" styleClass="field-label"/>
+                                        <ComboBox fx:id="strategyComboBox" maxWidth="Infinity"/>
+                                    </VBox>
+                                </HBox>
+                                <HBox spacing="12" alignment="CENTER_LEFT">
+                                    <Label fx:id="planSummaryLabel" styleClass="row-meta" wrapText="true"
+                                           HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                                    <Button text="Organize my tasks" onAction="#handleOrganizeTasks" styleClass="primary-button"/>
+                                </HBox>
+                                <VBox fx:id="recommendedTasksBox" spacing="6"/>
                             </children>
                         </VBox>
 

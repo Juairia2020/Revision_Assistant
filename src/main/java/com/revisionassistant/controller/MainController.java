@@ -358,7 +358,7 @@ public class MainController {
                 "/com/revisionassistant/fxml/TaskView.fxml",
                 tasksButton,
                 "Study Planner",
-                "Turn your study goals into manageable tasks."
+                "Add study tasks and auto-organize them into a plan with one click."
         );
     }
 
@@ -408,7 +408,7 @@ public class MainController {
                 "/com/revisionassistant/fxml/StudyToolsView.fxml",
                 studyToolsButton,
                 "Study Tools",
-                "Topic dependencies and study planner for smarter revision."
+                "Inspect topic prerequisites and the order they should be studied in."
         );
     }
 
