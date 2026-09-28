@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.revisionassistant.controller.QuizController">
+    <center>
+        <TabPane tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+            <tabs>
+                <!-- Manage Questions: library / CRUD screen -->
+                <Tab text="Manage Questions">
+                    <content>
+                        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="dashboard-scroll">
+                            <content>
+                                <VBox spacing="16" styleClass="page-content">
+                                    <padding><Insets top="14" right="16" bottom="24" left="16"/></padding>
+                                    <children>
+                                        <VBox spacing="12" styleClass="panel">
+                                            <children>
+                                                <Label text="Add or edit a question" styleClass="panel-title"/>
+                                                <HBox spacing="12" alignment="BOTTOM_LEFT">
+                                                    <VBox spacing="4"><Label text="Subject" styleClass="field-label"/>
+                                                        <ComboBox fx:id="subjectComboBox" promptText="Subject" prefWidth="170"/></VBox>
+                                                    <VBox spacing="4"><Label text="Topic (optional)" styleClass="field-label"/>
+                                                        <ComboBox fx:id="topicComboBox" promptText="Topic (optional)" prefWidth="180"/></VBox>
+                                                    <VBox spacing="4"><Label text="Correct option" styleClass="field-label"/>
+                                                        <ComboBox fx:id="correctOptionComboBox" promptText="Correct" prefWidth="110"/></VBox>
+                                                </HBox>
+                                                <VBox spacing="4"><Label text="Question" styleClass="field-label"/>
+                                                    <TextArea fx:id="questionTextArea" promptText="Question text" prefRowCount="2" wrapText="true"/></VBox>
+                                                <HBox spacing="12">
+                                                    <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Option A" styleClass="field-label"/>
+                                                        <TextField fx:id="optionAField" promptText="Option A"/></VBox>
+                                                    <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Option B" styleClass="field-label"/>
+                                                        <TextField fx:id="optionBField" promptText="Option B"/></VBox>
+                                                    <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Option C" styleClass="field-label"/>
+                                                        <TextField fx:id="optionCField" promptText="Option C"/></VBox>
+                                                    <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Option D" styleClass="field-label"/>
+                                                        <TextField fx:id="optionDField" promptText="Option D"/></VBox>
+                                                </HBox>
+                                                <HBox spacing="8" alignment="CENTER_LEFT" styleClass="action-footer">
+                                                    <Button text="Add" onAction="#handleAddQuestion" styleClass="primary-button"/>
+                                                    <Button text="Update" onAction="#handleEditQuestion" styleClass="secondary-button"/>
+                                                    <Button fx:id="importJsonButton" text="Import JSON" onAction="#handleImportJson" styleClass="secondary-button"/>
+                                                    <Button text="Copy Prompt" onAction="#handleCopyJsonPrompt" styleClass="link-button"/>
+                                                    <ProgressIndicator fx:id="importProgressIndicator" prefWidth="18" prefHeight="18" visible="false"/>
+                                                    <Label fx:id="importStatusLabel" styleClass="row-meta"/>
+                                                    <Region HBox.hgrow="ALWAYS"/>
+                                                    <Button text="Delete" onAction="#handleDeleteQuestion" styleClass="danger-button"/>
+                                                </HBox>
+                                            </children>
+                                        </VBox>
+                                        <VBox spacing="10">
+                                            <children>
+                                                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="action-bar compact">
+                                                    <Label text="Your Questions" styleClass="section-title" HBox.hgrow="ALWAYS"/>
+                                                    <Label text="Filter" styleClass="filter-label"/>
+                                                    <ComboBox fx:id="filterSubjectComboBox" prefWidth="150"/>
+                                                    <Button text="Clear filters" onAction="#handleClearQuestionFilter" styleClass="link-button"/>
+                                                </HBox>
+                                                <FlowPane fx:id="questionCardsPane" hgap="14" vgap="14" prefWrapLength="760" styleClass="card-library"/>
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </VBox>
+                            </content>
+                        </ScrollPane>
+                    </content>
+                </Tab>
+                <!-- Take Quiz: small centered setup panel, then a focused quiz-taking column -->
+                <Tab text="Take Quiz">
+                    <content>
+                        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="dashboard-scroll">
+                            <content>
+                                <VBox spacing="18" alignment="TOP_CENTER" styleClass="page-content">
+                                    <padding><Insets top="20" right="16" bottom="24" left="16"/></padding>
+                                    <children>
+                                        <VBox spacing="12" maxWidth="520" styleClass="panel">
+                                            <children>
+                                                <Label text="Start a quiz" styleClass="panel-title"/>
+                                                <VBox spacing="4"><Label text="Subject" styleClass="field-label"/>
+                                                    <ComboBox fx:id="quizSubjectComboBox" promptText="Subject" maxWidth="Infinity"/></VBox>
+                                                <VBox spacing="4"><Label text="Topic" styleClass="field-label"/>
+                                                    <ComboBox fx:id="quizTopicComboBox" promptText="All topics" maxWidth="Infinity"/></VBox>
+                                                <VBox spacing="4"><Label text="Time limit" styleClass="field-label"/>
+                                                    <ComboBox fx:id="quizTimeLimitComboBox" maxWidth="Infinity"/></VBox>
+                                                <Button text="Start Quiz →" onAction="#handleStartQuiz" styleClass="primary-button" maxWidth="Infinity"/>
+                                            </children>
+                                        </VBox>
+                                        <VBox spacing="10" maxWidth="760" styleClass="quiz-run-strip">
+                                            <children>
+                                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                                    <Label fx:id="quizProgressText" text="0 questions" styleClass="quiz-progress-label"/>
+                                                    <Region HBox.hgrow="ALWAYS"/>
+                                                    <Label fx:id="quizTimerLabel" text="" styleClass="counter-pill" visible="false" managed="false"/>
+                                                </HBox>
+                                                <ProgressBar fx:id="quizProgressBar" progress="0.0" maxWidth="Infinity" styleClass="quiz-progress-bar"/>
+                                                <Label fx:id="quizResultLabel" styleClass="stat-value" wrapText="true"/>
+                                                <VBox fx:id="weakTopicsBox" spacing="8" styleClass="weak-topics-box" visible="false" managed="false"/>
+                                            </children>
+                                        </VBox>
+                                        <VBox spacing="14" maxWidth="760">
+                                            <children>
+                                                <VBox fx:id="questionsBox" spacing="12"/>
+                                                <Button fx:id="submitQuizButton" text="Submit Quiz ✓" onAction="#handleSubmitQuiz" styleClass="primary-button"/>
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </VBox>
+                            </content>
+                        </ScrollPane>
+                    </content>
+                </Tab>
+                <Tab text="Quiz History">
+                    <content>
+                        <ScrollPane fitToWidth="true" styleClass="dashboard-scroll">
+                            <content>
+                                <VBox spacing="16" alignment="TOP_CENTER" styleClass="page-content">
+                                    <padding><Insets top="20" right="16" bottom="16" left="16"/></padding>
+                                    <children>
+                                        <VBox spacing="10" maxWidth="760">
+                                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                                <Label text="Recent Attempts" styleClass="section-title" HBox.hgrow="ALWAYS"/>
+                                                <Label text="Your quiz history" styleClass="row-meta"/>
+                                            </HBox>
+                                            <VBox fx:id="historyBox" spacing="8"/>
+                                        </VBox>
+                                    </children>
+                                </VBox>
+                            </content>
+                        </ScrollPane>
+                    </content>
+                </Tab>
+            </tabs>
+        </TabPane>
+    </center>
+</BorderPane>

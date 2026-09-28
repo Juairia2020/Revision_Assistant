@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.revisionassistant.controller.ResourcesController"
+      styleClass="view-root" spacing="0">
+    <!-- Left: add-resource form -->
+    <VBox spacing="12" styleClass="resource-form-panel" minWidth="280" maxWidth="320">
+        <padding><Insets top="20" right="16" bottom="20" left="16"/></padding>
+        <Label text="Add Resource" styleClass="panel-title"/>
+        <VBox spacing="4"><Label text="Title" styleClass="field-label"/>
+            <TextField fx:id="titleField" promptText="Title *"/></VBox>
+        <VBox spacing="4"><Label text="URL" styleClass="field-label"/>
+            <TextField fx:id="urlField" promptText="URL *  (https://...)"/></VBox>
+        <VBox spacing="4"><Label text="Description" styleClass="field-label"/>
+            <TextField fx:id="descriptionField" promptText="Description (optional)"/></VBox>
+        <VBox spacing="4"><Label text="Category" styleClass="field-label"/>
+            <ComboBox fx:id="categoryCombo" maxWidth="Infinity"/></VBox>
+        <VBox spacing="4"><Label text="Subject" styleClass="field-label"/>
+            <ComboBox fx:id="subjectCombo" maxWidth="Infinity" promptText="Subject (optional)"/></VBox>
+        <Button text="+ Add Resource" maxWidth="Infinity" styleClass="primary-button" onAction="#handleAddResource"/>
+        <Label fx:id="statusLabel" styleClass="row-meta" wrapText="true"/>
+    </VBox>
+    <Separator orientation="VERTICAL"/>
+    <!-- Right: bookmark tiles -->
+    <VBox HBox.hgrow="ALWAYS" spacing="0">
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="view-toolbar">
+            <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
+            <Region HBox.hgrow="ALWAYS"/>
+            <HBox spacing="8" alignment="CENTER_LEFT" styleClass="action-bar compact">
+                <Label text="FILTER" styleClass="action-caption"/>
+                <ComboBox fx:id="filterSubjectCombo" prefWidth="160"/>
+                <ComboBox fx:id="filterCategoryCombo" prefWidth="160"/>
+                <Label fx:id="countLabel" styleClass="badge-accent"/>
+            </HBox>
+        </HBox>
+        <ScrollPane VBox.vgrow="ALWAYS" fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
+            <content>
+                <VBox spacing="12">
+                    <padding><Insets top="12" right="16" bottom="20" left="16"/></padding>
+                    <Label fx:id="emptyStateLabel"
+                           text="No resources added yet. Use the form on the left to save your first study link."
+                           styleClass="empty-state" wrapText="true" visible="true"/>
+                    <FlowPane fx:id="resourcesBox" hgap="14" vgap="14"/>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </VBox>
+</HBox>

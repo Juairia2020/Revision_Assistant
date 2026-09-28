@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.revisionassistant.controller.ExamController"
+            styleClass="view-root">
+    <center>
+        <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" styleClass="content-scroll">
+            <content>
+                <HBox spacing="20" styleClass="page-content">
+                    <padding><Insets top="8" right="20" bottom="20" left="20"/></padding>
+                    <!-- Input: exam form -->
+                    <VBox spacing="12" styleClass="panel panel-round" minWidth="360" prefWidth="400" maxWidth="440">
+                        <Label text="Exam details" styleClass="panel-title"/>
+                        <VBox spacing="4"><Label text="Subject" styleClass="field-label"/>
+                            <ComboBox fx:id="subjectComboBox" promptText="Choose subject" maxWidth="Infinity"/></VBox>
+                        <VBox spacing="4"><Label text="Exam title" styleClass="field-label"/>
+                            <TextField fx:id="titleField" promptText="e.g. Midterm — Organic Chemistry"/></VBox>
+                        <VBox spacing="4"><Label text="Exam date" styleClass="field-label"/>
+                            <DatePicker fx:id="examDatePicker" promptText="Choose exam date" maxWidth="Infinity"/></VBox>
+                        <VBox spacing="4">
+                            <HBox alignment="CENTER_LEFT" spacing="8">
+                                <Label text="Syllabus topics" styleClass="field-label" HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="selectedTopicCountLabel" text="0 topics selected" styleClass="badge-accent"/>
+                            </HBox>
+                            <ListView fx:id="topicSelectionList" prefHeight="190" minHeight="150"/>
+                            <Label text="Select every topic that belongs to this exam. 100% means all of them are completed in Topics; progress updates the next time the exam list refreshes."
+                                   styleClass="row-meta" wrapText="true"/>
+                        </VBox>
+                        <HBox spacing="8" alignment="CENTER_LEFT" styleClass="action-footer">
+                            <Button text="Add Exam" onAction="#handleAddExam" styleClass="primary-button"/>
+                            <Button text="Update" onAction="#handleEditExam" styleClass="secondary-button"/>
+                            <Button text="Refresh" onAction="#handleRefresh" styleClass="link-button"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button text="Delete" onAction="#handleDeleteExam" styleClass="danger-button"/>
+                        </HBox>
+                    </VBox>
+                    <!-- Output: exam cards, tied to the form by adjacency and shared header style -->
+                    <VBox spacing="10" styleClass="panel panel-round" HBox.hgrow="ALWAYS" minWidth="320">
+                        <HBox alignment="CENTER_LEFT" spacing="8">
+                            <Label text="Your exams" styleClass="panel-title" HBox.hgrow="ALWAYS"/>
+                            <Label text="Progress follows syllabus completion" styleClass="row-meta"/>
+                        </HBox>
+                        <ListView fx:id="examsList" VBox.vgrow="ALWAYS" minHeight="360"/>
+                    </VBox>
+                </HBox>
+            </content>
+        </ScrollPane>
+    </center>
+</BorderPane>

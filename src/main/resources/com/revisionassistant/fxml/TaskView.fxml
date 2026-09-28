@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.revisionassistant.controller.TaskController"
+            styleClass="task-page">
+    <center>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="dashboard-scroll">
+            <content>
+                <VBox spacing="20" alignment="TOP_CENTER" styleClass="page-content">
+                    <padding><Insets top="20" right="24" bottom="28" left="24"/></padding>
+                    <children>
+
+                        <!-- Input: focused, centered vertical form -->
+                        <VBox spacing="14" maxWidth="760" styleClass="panel panel-round">
+                            <children>
+                                <VBox spacing="2">
+                                    <Label text="Plan a study task" styleClass="panel-title"/>
+                                    <Label text="Choose a subject, give the task a clear title, and add optional details."
+                                           styleClass="row-meta" wrapText="true"/>
+                                </VBox>
+                                <HBox spacing="12">
+                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                        <Label text="Subject" styleClass="field-label"/>
+                                        <ComboBox fx:id="subjectComboBox" promptText="Subject" maxWidth="Infinity"/>
+                                    </VBox>
+                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                        <Label text="Topic (optional)" styleClass="field-label"/>
+                                        <ComboBox fx:id="topicComboBox" promptText="Topic (optional)" maxWidth="Infinity"/>
+                                    </VBox>
+                                </HBox>
+                                <VBox spacing="4">
+                                    <Label text="Task title" styleClass="field-label"/>
+                                    <TextField fx:id="titleField" promptText="Task title"/>
+                                </VBox>
+                                <HBox spacing="12">
+                                    <VBox spacing="4">
+                                        <Label text="Time (min)" styleClass="field-label"/>
+                                        <Spinner fx:id="estimatedMinutesSpinner" prefWidth="110"/>
+                                    </VBox>
+                                    <VBox spacing="4">
+                                        <Label text="Priority" styleClass="field-label"/>
+                                        <ComboBox fx:id="priorityComboBox" prefWidth="130"/>
+                                    </VBox>
+                                    <VBox spacing="4">
+                                        <Label text="Status" styleClass="field-label"/>
+                                        <ComboBox fx:id="statusComboBox" prefWidth="140"/>
+                                    </VBox>
+                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                        <Label text="Deadline" styleClass="field-label"/>
+                                        <DatePicker fx:id="deadlinePicker" maxWidth="Infinity"/>
+                                    </VBox>
+                                </HBox>
+                                <HBox spacing="8" alignment="CENTER_LEFT" styleClass="action-footer">
+                                    <Button fx:id="addTaskButton" text="＋ Add task" onAction="#handleAddTask" styleClass="primary-button"/>
+                                    <Button text="Update" onAction="#handleEditTask" styleClass="secondary-button"/>
+                                    <Label fx:id="formStatusLabel" text="" wrapText="true" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                                    <Button text="Delete" onAction="#handleDeleteTask" styleClass="danger-button"/>
+                                </HBox>
+                            </children>
+                        </VBox>
+
+                        <!-- Output: independently bounded, directly below its form -->
+                        <VBox spacing="10" maxWidth="760" styleClass="panel panel-round">
+                            <children>
+                                <Label text="Your study tasks" styleClass="section-title"/>
+                                <HBox spacing="8" alignment="CENTER_LEFT" styleClass="action-bar compact">
+                                    <Label text="Filter" styleClass="filter-label"/>
+                                    <ComboBox fx:id="filterSubjectComboBox" prefWidth="160"/>
+                                    <ComboBox fx:id="filterStatusComboBox" prefWidth="135"/>
+                                    <ComboBox fx:id="filterPriorityComboBox" prefWidth="135"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Button text="Clear filters" onAction="#handleClearFilters" styleClass="link-button"/>
+                                </HBox>
+                                <ListView fx:id="tasksList" prefHeight="420" minHeight="260" styleClass="feature-list"/>
+                            </children>
+                        </VBox>
+                    </children>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+</BorderPane>

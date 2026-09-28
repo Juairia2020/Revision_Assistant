@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.revisionassistant.controller.PomodoroController"
+            fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
+    <content>
+        <VBox spacing="20" alignment="TOP_CENTER" styleClass="view-root">
+            <padding><Insets top="28" right="24" bottom="32" left="24"/></padding>
+
+            <!-- Mode tabs -->
+            <HBox spacing="8" alignment="CENTER">
+                <VBox fx:id="workCard" styleClass="pomo-mode-card,pomo-mode-active" alignment="CENTER" prefWidth="120">
+                    <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
+                    <Label text="🎯" styleClass="pomo-mode-icon"/>
+                    <Label text="Focus" styleClass="pomo-mode-label"/>
+                </VBox>
+                <VBox fx:id="shortBreakCard" styleClass="pomo-mode-card" alignment="CENTER" prefWidth="120">
+                    <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
+                    <Label text="☕" styleClass="pomo-mode-icon"/>
+                    <Label text="Short Break" styleClass="pomo-mode-label"/>
+                </VBox>
+                <VBox fx:id="longBreakCard" styleClass="pomo-mode-card" alignment="CENTER" prefWidth="120">
+                    <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
+                    <Label text="🌿" styleClass="pomo-mode-icon"/>
+                    <Label text="Long Break" styleClass="pomo-mode-label"/>
+                </VBox>
+            </HBox>
+
+            <!-- Timer display -->
+            <VBox alignment="CENTER" spacing="6" styleClass="pomo-timer-card">
+                <padding><Insets top="32" right="48" bottom="32" left="48"/></padding>
+                <Label fx:id="modeLabel" text="Focus Session" styleClass="pomo-mode-title"/>
+                <Label fx:id="timerLabel" text="25:00" styleClass="pomo-timer-display"/>
+                <ProgressBar fx:id="timerBar" maxWidth="280" progress="0" styleClass="pomo-timer-bar"/>
+                <Label fx:id="statusLabel" text="Ready to focus?" styleClass="pomo-status-label"/>
+            </VBox>
+
+            <!-- Controls -->
+            <HBox spacing="12" alignment="CENTER">
+                <Button fx:id="startPauseButton" text="▶  Start" styleClass="pomo-start-btn" onAction="#handleStartPause"/>
+                <Button fx:id="resetButton" text="↺  Reset" styleClass="pomo-reset-btn" onAction="#handleReset"/>
+            </HBox>
+
+            <!-- Session counter -->
+            <Label fx:id="sessionCountLabel" text="0 sessions completed" styleClass="pomo-session-count"/>
+
+            <!-- Settings row -->
+            <VBox styleClass="pomo-settings-card" spacing="14">
+                <padding><Insets top="16" right="20" bottom="16" left="20"/></padding>
+                <Label text="Timer Settings" styleClass="settings-section-title"/>
+                <HBox spacing="12" alignment="CENTER_LEFT">
+                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                        <Label text="Focus" styleClass="settings-label"/>
+                        <TextField fx:id="workDurationField" text="25" prefWidth="90" maxWidth="Infinity"/>
+                        <Label text="minutes" styleClass="row-meta"/>
+                    </VBox>
+                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                        <Label text="Short Break" styleClass="settings-label"/>
+                        <TextField fx:id="shortBreakField" text="5" prefWidth="90" maxWidth="Infinity"/>
+                        <Label text="minutes" styleClass="row-meta"/>
+                    </VBox>
+                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                        <Label text="Long Break" styleClass="settings-label"/>
+                        <TextField fx:id="longBreakField" text="15" prefWidth="90" maxWidth="Infinity"/>
+                        <Label text="minutes" styleClass="row-meta"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+
+            <!-- Tip -->
+            <Label text="💡  The timer resets to your current mode settings when you click Reset." styleClass="row-meta" wrapText="true"/>
+        </VBox>
+    </content>
+</ScrollPane>

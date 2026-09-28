@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.revisionassistant.controller.FlashcardController">
+    <center>
+        <TabPane tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+            <tabs>
+                <!-- Study Cards: a focused single-card review screen, not a form + grid -->
+                <Tab text="Study Cards">
+                    <content>
+                        <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" styleClass="dashboard-scroll">
+                            <content>
+                                <VBox spacing="20" alignment="TOP_CENTER" fillWidth="true" styleClass="page-content">
+                                    <padding><Insets top="16" right="16" bottom="24" left="16"/></padding>
+                                    <children>
+                                        <VBox spacing="6" alignment="CENTER" maxWidth="780">
+                                            <children>
+                                                <HBox spacing="14" alignment="CENTER" styleClass="action-bar">
+                                                    <children>
+                                                        <VBox spacing="4" styleClass="action-group">
+                                                            <Label text="DECK" styleClass="action-caption"/>
+                                                            <HBox spacing="8" alignment="CENTER_LEFT">
+                                                                <ComboBox fx:id="studySubjectComboBox" promptText="Subject" prefWidth="170"/>
+                                                                <ComboBox fx:id="studyTopicComboBox" promptText="Topic (optional)" prefWidth="180"/>
+                                                            </HBox>
+                                                        </VBox>
+                                                        <Region styleClass="action-divider"/>
+                                                        <VBox spacing="4" styleClass="action-group">
+                                                            <Label text="REVIEW" styleClass="action-caption"/>
+                                                            <HBox spacing="8" alignment="CENTER_LEFT">
+                                                                <ComboBox fx:id="studyStatusComboBox" prefWidth="150"/>
+                                                                <Button text="Start Studying" onAction="#handleStartStudying" styleClass="primary-button"/>
+                                                            </HBox>
+                                                        </VBox>
+                                                    </children>
+                                                </HBox>
+                                                <Label fx:id="studyStatusLabel" text="Choose a subject, then press Start Studying." styleClass="row-meta"/>
+                                            </children>
+                                        </VBox>
+                                        <VBox fx:id="studyPanel" spacing="14" alignment="TOP_CENTER" maxWidth="780" styleClass="study-card-shell" visible="false" managed="false">
+                                            <children>
+                                                <HBox alignment="CENTER_LEFT" spacing="10">
+                                                    <Label text="Study Card" styleClass="section-title" HBox.hgrow="ALWAYS"/>
+                                                    <Label fx:id="studyPositionLabel" styleClass="counter-pill"/>
+                                                </HBox>
+                                                <StackPane fx:id="flipCardStack" styleClass="flashcard-stage-container" onMouseClicked="#handleFlipCard">
+                                                    <children>
+                                                        <VBox fx:id="flipCardFront" spacing="10" styleClass="flashcard-stage">
+                                                            <children>
+                                                                <Label fx:id="studyFrontLabel" wrapText="true" styleClass="flashcard-question"/>
+                                                                <Label text="Click the card to reveal the answer" styleClass="study-flip-hint"/>
+                                                            </children>
+                                                        </VBox>
+                                                        <VBox fx:id="flipCardBack" spacing="10" styleClass="flashcard-stage flip-card-face-back" visible="false" managed="true">
+                                                            <children>
+                                                                <Label fx:id="studyBackLabel" wrapText="true" styleClass="flashcard-answer"/>
+                                                                <Label text="Click the card to see the question again" styleClass="study-flip-hint"/>
+                                                            </children>
+                                                        </VBox>
+                                                    </children>
+                                                </StackPane>
+                                                <HBox spacing="12" alignment="CENTER">
+                                                    <Button text="◀  Previous" onAction="#handlePreviousStudyCard" styleClass="secondary-button" minWidth="120"/>
+                                                    <Button text="Next  ▶" onAction="#handleNextStudyCard" styleClass="primary-button" minWidth="120"/>
+                                                </HBox>
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </VBox>
+                            </content>
+                        </ScrollPane>
+                    </content>
+                </Tab>
+                <!-- Manage Cards: library / CRUD screen -->
+                <Tab text="Manage Cards">
+                    <content>
+                        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="dashboard-scroll">
+                            <content>
+                                <VBox spacing="16" styleClass="page-content">
+                                    <padding><Insets top="14" right="16" bottom="24" left="16"/></padding>
+                                    <children>
+                                        <VBox spacing="12" styleClass="panel">
+                                            <children>
+                                                <Label text="Add or edit a card" styleClass="panel-title"/>
+                                                <HBox spacing="12" alignment="BOTTOM_LEFT">
+                                                    <VBox spacing="4"><Label text="Subject" styleClass="field-label"/>
+                                                        <ComboBox fx:id="subjectComboBox" promptText="Subject" prefWidth="170"/></VBox>
+                                                    <VBox spacing="4"><Label text="Topic (optional)" styleClass="field-label"/>
+                                                        <ComboBox fx:id="topicComboBox" promptText="Topic (optional)" prefWidth="180"/></VBox>
+                                                    <VBox spacing="4"><Label text="Revision status" styleClass="field-label"/>
+                                                        <ComboBox fx:id="revisionStatusComboBox" prefWidth="150"/></VBox>
+                                                    <CheckBox fx:id="difficultCheckBox" text="Difficult"/>
+                                                </HBox>
+                                                <HBox spacing="12">
+                                                    <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Front (question / prompt)" styleClass="field-label"/>
+                                                        <TextArea fx:id="frontArea" promptText="Front (question / prompt)" prefRowCount="2" wrapText="true"/></VBox>
+                                                    <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Back (answer)" styleClass="field-label"/>
+                                                        <TextArea fx:id="backArea" promptText="Back (answer)" prefRowCount="2" wrapText="true"/></VBox>
+                                                </HBox>
+                                                <HBox spacing="8" alignment="CENTER_LEFT" styleClass="action-footer">
+                                                    <Button text="Add" onAction="#handleAddFlashcard" styleClass="primary-button"/>
+                                                    <Button text="Update" onAction="#handleEditFlashcard" styleClass="secondary-button"/>
+                                                    <Button fx:id="importJsonButton" text="Import JSON" onAction="#handleImportJson" styleClass="secondary-button"/>
+                                                    <Button text="Copy Prompt" onAction="#handleCopyJsonPrompt" styleClass="link-button"/>
+                                                    <ProgressIndicator fx:id="importProgressIndicator" prefWidth="18" prefHeight="18" visible="false"/>
+                                                    <Label fx:id="importStatusLabel" styleClass="row-meta"/>
+                                                    <Region HBox.hgrow="ALWAYS"/>
+                                                    <Button text="Delete" onAction="#handleDeleteFlashcard" styleClass="danger-button"/>
+                                                </HBox>
+                                                <Label text="Generate structured JSON from your study material using any AI tool, save it as a .json file, and import it here." wrapText="true" styleClass="row-meta"/>
+                                            </children>
+                                        </VBox>
+                                        <VBox spacing="10">
+                                            <children>
+                                                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="action-bar compact">
+                                                    <Label text="Your Card Library" styleClass="section-title" HBox.hgrow="ALWAYS"/>
+                                                    <Label text="Filter" styleClass="filter-label"/>
+                                                    <ComboBox fx:id="filterSubjectComboBox" prefWidth="150"/>
+                                                    <ComboBox fx:id="filterDifficultComboBox" prefWidth="140"/>
+                                                    <ComboBox fx:id="filterStatusComboBox" prefWidth="140"/>
+                                                    <Button text="Clear filters" onAction="#handleClearFilters" styleClass="link-button"/>
+                                                </HBox>
+                                                <Label text="Click a card to edit it" styleClass="row-meta"/>
+                                                <FlowPane fx:id="cardsPane" hgap="14" vgap="14" prefWrapLength="760" styleClass="card-library"/>
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </VBox>
+                            </content>
+                        </ScrollPane>
+                    </content>
+                </Tab>
+            </tabs>
+        </TabPane>
+    </center>
+</BorderPane>

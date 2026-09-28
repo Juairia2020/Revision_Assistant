@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.revisionassistant.controller.ImportedQuestionsDialogController"
+            prefWidth="920" prefHeight="480">
+    <top>
+        <VBox spacing="6" styleClass="view-header">
+            <padding><Insets top="14" right="16" bottom="10" left="16"/></padding>
+            <children>
+                <Label text="Preview imported quiz questions" styleClass="view-title"/>
+                <Label text="Review the imported questions. Nothing is saved until you confirm." wrapText="true" styleClass="row-meta"/>
+                <HBox spacing="10">
+                    <children>
+                        <Button text="Select all" onAction="#handleSelectAll" styleClass="link-button"/>
+                        <Button text="Select none" onAction="#handleSelectNone" styleClass="link-button"/>
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+    </top>
+    <center>
+        <TableView fx:id="questionsTable" editable="true">
+            <columns>
+                <TableColumn fx:id="selectColumn" text="Keep" prefWidth="55"/>
+                <TableColumn fx:id="questionColumn" text="Question" prefWidth="250"/>
+                <TableColumn fx:id="optionAColumn" text="A" prefWidth="130"/>
+                <TableColumn fx:id="optionBColumn" text="B" prefWidth="130"/>
+                <TableColumn fx:id="optionCColumn" text="C" prefWidth="130"/>
+                <TableColumn fx:id="optionDColumn" text="D" prefWidth="130"/>
+                <TableColumn fx:id="correctColumn" text="Correct" prefWidth="70"/>
+            </columns>
+            <BorderPane.margin><Insets top="0" right="16" bottom="10" left="16"/></BorderPane.margin>
+        </TableView>
+    </center>
+    <bottom>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <padding><Insets top="0" right="16" bottom="16" left="16"/></padding>
+            <children>
+                <Button text="Cancel" onAction="#handleCancel" styleClass="secondary-button"/>
+                <Button fx:id="confirmButton" text="Confirm import" onAction="#handleConfirm" styleClass="primary-button"/>
+            </children>
+        </HBox>
+    </bottom>
+</BorderPane>

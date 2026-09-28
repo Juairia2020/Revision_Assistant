@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Arc?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.shape.Polygon?>
+<?import javafx.scene.shape.Polyline?>
+<?import javafx.scene.shape.Rectangle?>
+<?import javafx.scene.Group?>
+
+<ScrollPane fitToWidth="true"
+            fitToHeight="false"
+            styleClass="dashboard-scroll"
+            xmlns="http://javafx.com/javafx/26"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.revisionassistant.controller.DashboardController">
+
+    <content>
+        <VBox spacing="18"
+              styleClass="dashboard"
+              fillWidth="true">
+
+            <padding>
+                <Insets top="24" right="24" bottom="30" left="24"/>
+            </padding>
+
+            <children>
+
+                <!-- "Today at a glance" hero band: greeting + stat cards + daily quote,
+                     grouped by a full-width background tint, not by wrapping them in a
+                     bordered/shadowed card (that would nest cards inside a card). The
+                     stat cards and the quote block keep their own individual card
+                     treatment; this band is only a background + padding. -->
+                <VBox spacing="18" styleClass="dashboard-hero-band">
+
+                    <!-- Welcome -->
+                    <VBox spacing="3"
+                          styleClass="dashboard-welcome">
+
+                        <Label fx:id="welcomeLabel"
+                               text="Good evening"
+                               styleClass="dashboard-welcome-title"/>
+
+                        <Label text="Ready for your next study session?"
+                               styleClass="dashboard-welcome-subtitle"/>
+                    </VBox>
+
+
+                    <!-- Statistics: one ring card (single centered percentage) + a 2x2 grid of stat cards -->
+                    <HBox spacing="12" alignment="TOP_LEFT" styleClass="stat-card-row">
+
+                        <VBox alignment="CENTER" spacing="8" styleClass="stat-card stat-card-accent stat-ring-card">
+                            <StackPane styleClass="progress-ring" minWidth="96" minHeight="96"
+                                       prefWidth="96" prefHeight="96" maxWidth="96" maxHeight="96">
+                                <Pane minWidth="96" minHeight="96" prefWidth="96" prefHeight="96"
+                                      maxWidth="96" maxHeight="96">
+                                    <Circle centerX="48" centerY="48" radius="42" fill="TRANSPARENT"
+                                            strokeWidth="8" styleClass="stat-progress-ring-track"/>
+                                    <Arc fx:id="overallProgressArc" type="OPEN"
+                                         centerX="48" centerY="48" radiusX="42" radiusY="42"
+                                         startAngle="90" length="0" fill="TRANSPARENT"
+                                         strokeLineCap="ROUND" strokeWidth="8"
+                                         styleClass="stat-progress-ring-arc"/>
+                                </Pane>
+                                <Label fx:id="overallProgressRingLabel" text="0%"
+                                       styleClass="stat-progress-ring-label"/>
+                            </StackPane>
+                            <Label text="Overall progress" styleClass="stat-label"/>
+                        </VBox>
+
+                        <GridPane hgap="12" vgap="12" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="50" minWidth="0" hgrow="ALWAYS"/>
+                                <ColumnConstraints percentWidth="50" minWidth="0" hgrow="ALWAYS"/>
+                            </columnConstraints>
+                            <children>
+                                <HBox styleClass="stat-card" maxWidth="Infinity"
+                                  GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.hgrow="ALWAYS">
+                                <StackPane styleClass="stat-icon stat-icon-blue">
+                                    <Group>
+                                        <Rectangle x="1" y="1" width="14" height="14" arcWidth="3" arcHeight="3" fill="TRANSPARENT" styleClass="nav-icon-stroke" strokeWidth="1.6"/>
+                                        <Polyline fill="TRANSPARENT" styleClass="nav-icon-stroke" strokeWidth="2" strokeLineCap="ROUND" strokeLineJoin="ROUND" points="3.5,8, 6.5,11, 12.5,4.5"/>
+                                    </Group>
+                                </StackPane>
+                                <VBox alignment="CENTER_LEFT">
+                                    <Label fx:id="pendingTasksValue"
+                                           text="0"
+                                           styleClass="stat-value"/>
+                                    <Label text="Tasks remaining"
+                                           styleClass="stat-label"/>
+                                </VBox>
+                            </HBox>
+
+                                <HBox styleClass="stat-card" maxWidth="Infinity"
+                                  GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.hgrow="ALWAYS">
+                                <StackPane styleClass="stat-icon stat-icon-orange">
+                                    <Group>
+                                        <Circle centerX="8" centerY="8" radius="6.5" fill="TRANSPARENT" styleClass="nav-icon-stroke" strokeWidth="1.6"/>
+                                        <Line startX="8" startY="8" endX="8" endY="4" styleClass="nav-icon-stroke" strokeWidth="1.5" strokeLineCap="ROUND"/>
+                                        <Line startX="8" startY="8" endX="11" endY="9.5" styleClass="nav-icon-stroke" strokeWidth="1.5" strokeLineCap="ROUND"/>
+                                    </Group>
+                                </StackPane>
+                                <VBox alignment="CENTER_LEFT">
+                                    <Label fx:id="studyWeekValue"
+                                           text="0 min"
+                                           styleClass="stat-value"/>
+                                    <Label text="Study time this week"
+                                           styleClass="stat-label"/>
+                                </VBox>
+                            </HBox>
+
+                                <HBox styleClass="stat-card" maxWidth="Infinity"
+                                  GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.hgrow="ALWAYS">
+                                <StackPane styleClass="stat-icon stat-icon-pink">
+                                    <Group>
+                                        <Rectangle x="2" y="1" width="12" height="14" arcWidth="2" arcHeight="2" fill="TRANSPARENT" styleClass="nav-icon-stroke" strokeWidth="1.6"/>
+                                        <Line startX="4.5" startY="5" endX="11.5" endY="5" styleClass="nav-icon-stroke" strokeWidth="1.4"/>
+                                        <Line startX="4.5" startY="8" endX="11.5" endY="8" styleClass="nav-icon-stroke" strokeWidth="1.4"/>
+                                        <Line startX="4.5" startY="11" endX="9" endY="11" styleClass="nav-icon-stroke" strokeWidth="1.4"/>
+                                    </Group>
+                                </StackPane>
+                                <VBox alignment="CENTER_LEFT">
+                                    <Label fx:id="upcomingExamCountValue"
+                                           text="0"
+                                           styleClass="stat-value"/>
+                                    <Label text="Upcoming exams"
+                                           styleClass="stat-label"/>
+                                </VBox>
+                            </HBox>
+
+                                <HBox styleClass="stat-card" maxWidth="Infinity"
+                                  GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.hgrow="ALWAYS">
+                                <StackPane styleClass="stat-icon stat-icon-teal">
+                                    <Group>
+                                        <Polygon points="8,1, 15,8, 8,15, 1,8" fill="TRANSPARENT" styleClass="nav-icon-stroke" strokeWidth="1.6"/>
+                                        <Polyline fill="TRANSPARENT" styleClass="nav-icon-stroke" strokeWidth="1.8" strokeLineCap="ROUND" strokeLineJoin="ROUND" points="5,8, 7,10.5, 11,5.5"/>
+                                    </Group>
+                                </StackPane>
+                                <VBox alignment="CENTER_LEFT">
+                                    <Label fx:id="completedTopicsValue"
+                                           text="0"
+                                           styleClass="stat-value"/>
+                                    <Label text="Completed topics"
+                                           styleClass="stat-label"/>
+                                </VBox>
+                            </HBox>
+
+                            </children>
+                        </GridPane>
+                    </HBox>
+
+
+                    <!-- Daily Quote: JSON HTTP response -> DTO -> JavaFX UI -->
+                    <VBox spacing="6" styleClass="dashboard-section daily-quote-card">
+                        <Label text="&#8220;" styleClass="daily-quote-mark"/>
+                        <Label fx:id="quoteTextLabel" text="“A quote will appear here.”" wrapText="true" styleClass="daily-quote-text"/>
+                        <Label fx:id="quoteAuthorLabel" text="— Revision Assistant" styleClass="daily-quote-author"/>
+                        <Label fx:id="quoteStatusLabel" text="Loading…" styleClass="daily-quote-footer"/>
+                    </VBox>
+
+                </VBox>
+
+                <!-- Upcoming Exams -->
+                <VBox spacing="10"
+                      styleClass="dashboard-section">
+
+                    <Label text="Upcoming Exams"
+                           styleClass="section-title"/>
+
+                    <VBox fx:id="upcomingExamsBox"
+                          spacing="10"
+                          fillWidth="true"/>
+
+                </VBox>
+
+
+                <!-- Study Activity -->
+                <VBox spacing="10"
+                      styleClass="dashboard-section">
+
+                    <HBox alignment="CENTER_LEFT">
+
+                        <Label text="Study Activity"
+                               styleClass="section-title"/>
+
+                        <Region HBox.hgrow="ALWAYS"/>
+
+                        <Label text="Last 7 days"
+                               styleClass="section-filter-label"/>
+
+                    </HBox>
+
+
+                    <StackPane 
+                               minHeight="220"
+                               prefHeight="260">
+
+                        <LineChart fx:id="activityChart"
+                                   animated="true"
+                                   legendVisible="false"
+                                   createSymbols="true"
+                                   horizontalGridLinesVisible="true"
+                                   verticalGridLinesVisible="false">
+
+                            <xAxis>
+                                <CategoryAxis label="Date"/>
+                            </xAxis>
+
+                            <yAxis>
+                                <NumberAxis label="Minutes"
+                                            forceZeroInRange="true"/>
+                            </yAxis>
+
+                        </LineChart>
+
+
+                        <Label fx:id="activityEmptyLabel"
+                               text="No study activity yet. Complete a study session and it will appear here."
+                               visible="false"
+                               managed="false"
+                               wrapText="true"
+                               styleClass="empty-state"/>
+
+                    </StackPane>
+
+                </VBox>
+
+
+                <!-- Subject Progress + Today's Tasks -->
+                <GridPane hgap="16"
+                          vgap="16"
+                >
+
+                    <columnConstraints>
+
+                        <ColumnConstraints percentWidth="50"
+                                           minWidth="0"
+                                           hgrow="ALWAYS"/>
+
+                        <ColumnConstraints percentWidth="50"
+                                           minWidth="0"
+                                           hgrow="ALWAYS"/>
+
+                    </columnConstraints>
+
+                    <children>
+
+                        <!-- Subject Progress -->
+                        <VBox spacing="12"
+                              styleClass="dashboard-section"
+                              GridPane.columnIndex="0">
+
+                            <HBox alignment="CENTER_LEFT">
+
+                                <Label text="Subject Progress"
+                                       styleClass="section-title"/>
+
+                            </HBox>
+
+                            <VBox fx:id="subjectProgressBox"
+                                  spacing="11"
+                                  fillWidth="true"/>
+
+                        </VBox>
+
+
+                        <!-- Today's Tasks -->
+                        <VBox spacing="10"
+                              styleClass="dashboard-section"
+                              GridPane.columnIndex="1">
+
+                            <Label text="Today's Tasks"
+                                   styleClass="section-title"/>
+
+                            <VBox fx:id="todaysTasksBox"
+                                  spacing="8"
+                                  fillWidth="true"/>
+
+                        </VBox>
+
+                    </children>
+
+                </GridPane>
+
+
+                <!-- Continue Studying + Quick Access -->
+                <HBox spacing="16"
+                      fillHeight="true">
+
+                    <!-- Continue Studying -->
+                    <VBox spacing="12"
+                          styleClass="dashboard-section continue-card"
+                          HBox.hgrow="ALWAYS">
+
+                        <Label text="Continue Studying"
+                               styleClass="section-title"/>
+
+                        <Label fx:id="continueSectionLabel"
+                               text="Study Planner"
+                               styleClass="row-meta"/>
+
+                        <Label fx:id="continueTitleLabel"
+                               text="Choose your next study task"
+                               wrapText="true"
+                               styleClass="continue-title"/>
+
+                        <Label fx:id="continueReasonLabel"
+                               text="Pick up where your existing study data says you left off."
+                               wrapText="true"
+                               styleClass="continue-reason"/>
+
+                        <Button fx:id="continueButton"
+                                text="Continue Studying →"
+                                styleClass="primary-button"
+                                onAction="#handleContinue"/>
+
+                    </VBox>
+
+
+                    <!-- Quick Access -->
+                    <VBox spacing="10"
+                          styleClass="dashboard-section"
+                          HBox.hgrow="ALWAYS">
+
+                        <Label text="Quick Access"
+                               styleClass="section-title"/>
+
+                        <Pane fx:id="quickActionsBox"/>
+
+                    </VBox>
+
+                </HBox>
+
+            </children>
+
+        </VBox>
+    </content>
+
+</ScrollPane>

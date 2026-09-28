@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.revisionassistant.controller.StudySessionController">
+    <top>
+        <VBox spacing="12" styleClass="view-header" BorderPane.alignment="CENTER">
+            <padding><Insets top="16" right="16" bottom="12" left="16"/></padding>
+            <children>
+                <VBox spacing="12" styleClass="action-bar">
+                    <children>
+                        <HBox spacing="14" alignment="CENTER_LEFT">
+                            <VBox spacing="4" styleClass="action-group">
+                                <Label text="WHAT YOU STUDIED" styleClass="action-caption"/>
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <ComboBox fx:id="subjectComboBox" promptText="Subject" prefWidth="170"/>
+                                    <ComboBox fx:id="topicComboBox" promptText="Topic (optional)" prefWidth="180"/>
+                                </HBox>
+                            </VBox>
+                            <Region styleClass="action-divider"/>
+                            <VBox spacing="4" styleClass="action-group">
+                                <Label text="WHEN" styleClass="action-caption"/>
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <DatePicker fx:id="sessionDatePicker" prefWidth="150"/>
+                                    <Spinner fx:id="durationSpinner" prefWidth="100"/>
+                                    <Label text="min" styleClass="row-meta"/>
+                                </HBox>
+                            </VBox>
+                            <Region styleClass="action-divider"/>
+                            <VBox spacing="4" styleClass="action-group" HBox.hgrow="ALWAYS">
+                                <Label text="NOTES" styleClass="action-caption"/>
+                                <TextField fx:id="notesField" promptText="Notes (optional)" maxWidth="Infinity"/>
+                            </VBox>
+                        </HBox>
+                        <HBox spacing="8" alignment="CENTER_LEFT" styleClass="action-footer">
+                            <Button text="Add" onAction="#handleAddSession" styleClass="primary-button"/>
+                            <Button text="Update" onAction="#handleEditSession" styleClass="secondary-button"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button text="Delete" onAction="#handleDeleteSession" styleClass="danger-button"/>
+                        </HBox>
+                    </children>
+                </VBox>
+                <Label text="Session log" styleClass="section-title"/>
+            </children>
+        </VBox>
+    </top>
+    <center>
+        <ListView fx:id="sessionsList" BorderPane.alignment="CENTER" styleClass="feature-list timeline-list">
+            <BorderPane.margin><Insets top="0" right="16" bottom="16" left="16"/></BorderPane.margin>
+        </ListView>
+    </center>
+</BorderPane>
